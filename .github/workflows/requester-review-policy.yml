@@ -1,0 +1,48 @@
+name: requester-review-policy
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+  pull_request_review:
+    types:
+      - submitted
+      - dismissed
+
+jobs:
+  requester-review-policy:
+    name: requester-review-policy
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Evaluate requester-review policy
+        env:
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GITHUB_APP_INSTALLATION_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+        run: node --import tsx ./src/policy/run-requester-review-policy.ts
+
+      - name: Upload policy result
+        if: always()
+        run: |
+          if [ -n "${GITHUB_STEP_SUMMARY}" ] && [ -f "${GITHUB_OUTPUT}" ]; then
+            printf 'Requester-review policy completed.\n' >> "${GITHUB_STEP_SUMMARY}"
+          fi

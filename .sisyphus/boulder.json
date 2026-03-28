@@ -1,0 +1,122 @@
+{
+  "active_plan": "/Users/krnomad/work/ai/gb-test/.sisyphus/plans/test-repo-yocto-repo-provisioning.md",
+  "started_at": "2026-03-28T10:27:05.022Z",
+  "session_ids": [
+    "ses_2cc224c71ffel0vyEe2JuZUGXq",
+    "ses_2cc091e2dffejoNZJp7i8QOqM8",
+    "ses_2cc026434ffeaE4SyT9ss4jgIe",
+    "ses_2cbfbf6b7ffe66peNLqzzUVw2L",
+    "ses_2cbf4e37bffeIGA7RP9wbTZCbT",
+    "ses_2cbed861effeLFADtp7KiquyRU",
+    "ses_2cbe300aeffelcT34EncqeWqB2",
+    "ses_2cbbbc8baffe7X1bxTuwwFrTIX",
+    "ses_2cbb362c3ffeADNiFt8gSS7ASa",
+    "ses_2cbaa4ebaffeESvkxzqRErTBvK",
+    "ses_2cba3054cffeZp7AR8U6LVsza0",
+    "ses_2cba30597ffeTue4AeOUSz4aKq",
+    "ses_2cba3050affekjp0JW43l5z9jx",
+    "ses_2cba305e6ffedtjwBz7fqHa75O",
+    "ses_2cb9e72e5ffeiJe8vTNY6rz3rq",
+    "ses_2cb954f3bffeUzI2htY6YjDK1G",
+    "ses_2cb954ef3ffed6Vpa4HCUH9Ukf",
+    "ses_2cb954f8affe4clDAto0H3MlRe",
+    "ses_2cb954fdaffeu3qtbUVVvcJ6XO",
+    "ses_2cb9266f2ffeEjrJdI5E9xpIF1",
+    "ses_2cb896381ffeIKJrlnEA5BR2lc",
+    "ses_2cb896315ffecnQ72tKvgNShdi",
+    "ses_2cb89625effecPtBL2xtaQKbAV",
+    "ses_2cb8962b5ffee8avJ5v9xBKjO7",
+    "ses_2cb873b99ffegc6nXW2uJWXVS6",
+    "ses_2cb8467f8ffeEKD2k5u8E5Y4H0",
+    "ses_2cb84679fffeZVAWiFo1cdFg04",
+    "ses_2cb846729ffeFsy8Q7EmDJwhzW",
+    "ses_2cb8466d3ffeP6gzJ7EdJiMmu3",
+    "ses_2cb81f9abffeYC1ylei3BJnENK",
+    "ses_2cb81f942ffelDfPuANRgs7EwA"
+  ],
+  "plan_name": "test-repo-yocto-repo-provisioning",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Create the control repository skeleton and provisioning contract",
+      "session_id": "ses_2cc026434ffeaE4SyT9ss4jgIe",
+      "agent": "Sisyphus-Junior",
+      "category": "balanced",
+      "updated_at": "2026-03-28T10:33:38.755Z"
+    },
+    "todo:2": {
+      "task_key": "todo:2",
+      "task_label": "2",
+      "task_title": "Implement GitHub App authentication and GitHub API boundary",
+      "session_id": "ses_2cbfbf6b7ffe66peNLqzzUVw2L",
+      "agent": "Sisyphus-Junior",
+      "category": "high",
+      "updated_at": "2026-03-28T10:40:45.838Z"
+    },
+    "todo:3": {
+      "task_key": "todo:3",
+      "task_label": "3",
+      "task_title": "Define template propagation and requester metadata strategy",
+      "session_id": "ses_2cbf4e37bffeIGA7RP9wbTZCbT",
+      "agent": "Sisyphus-Junior",
+      "category": "balanced",
+      "updated_at": "2026-03-28T10:49:44.682Z"
+    },
+    "todo:4": {
+      "task_key": "todo:4",
+      "task_label": "4",
+      "task_title": "Implement provisioning workflow with validation, idempotency, and sandbox execution",
+      "session_id": "ses_2cbed861effeLFADtp7KiquyRU",
+      "agent": "Sisyphus-Junior",
+      "category": "high",
+      "updated_at": "2026-03-28T10:58:55.578Z"
+    },
+    "todo:5": {
+      "task_key": "todo:5",
+      "task_label": "5",
+      "task_title": "Apply repository hardening: branch protection/rulesets, required checks, and no-bypass policy",
+      "session_id": "ses_2cbe300aeffelcT34EncqeWqB2",
+      "agent": "Sisyphus-Junior",
+      "category": "high",
+      "updated_at": "2026-03-28T11:08:49.160Z"
+    },
+    "todo:6": {
+      "task_key": "todo:6",
+      "task_label": "6",
+      "task_title": "Implement partial-failure handling, quarantine reporting, and success-state verification",
+      "session_id": "ses_2cbbbc8baffe7X1bxTuwwFrTIX",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-03-28T11:53:12.356Z"
+    },
+    "todo:7": {
+      "task_key": "todo:7",
+      "task_label": "7",
+      "task_title": "Implement requester-review enforcement workflow and reviewer-policy algorithm",
+      "session_id": "ses_2cbb362c3ffeADNiFt8gSS7ASa",
+      "agent": "Sisyphus-Junior",
+      "category": "high",
+      "updated_at": "2026-03-28T12:02:52.145Z"
+    },
+    "todo:8": {
+      "task_key": "todo:8",
+      "task_label": "8",
+      "task_title": "Add mocked test suite, sandbox integration verification, and evidence automation",
+      "session_id": "ses_2cbaa4ebaffeESvkxzqRErTBvK",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-03-28T12:11:13.965Z"
+    },
+    "final-wave:f1": {
+      "task_key": "final-wave:f1",
+      "task_label": "F1",
+      "task_title": "Plan Compliance Audit — oracle",
+      "session_id": "ses_2cb81f9abffeYC1ylei3BJnENK",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-03-28T12:50:51.210Z"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+
+ RUN  v3.2.4 /Users/krnomad/work/ai/gb-test
+
+ ✓ tests/provisioning-contract.test.ts (11 tests | 5 skipped) 2ms
+
+ Test Files  1 passed (1)
+      Tests  6 passed | 5 skipped (11)
+   Start at  19:33:00
+   Duration  271ms (transform 18ms, setup 0ms, collect 18ms, tests 2ms, environment 0ms, prepare 38ms)
+

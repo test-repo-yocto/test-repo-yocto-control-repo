@@ -1,0 +1,24 @@
+# Learnings
+
+- Chosen stack: Node.js + TypeScript + Vitest. This keeps workflow code close to future GitHub App integration while preserving fast local contract tests.
+- Canonical provisioning contract lives in `src/contracts/provisioning.ts`; tests import that exact module instead of duplicating slug rules.
+- One final-name length limit is enforced in code (`50` chars including `proj-`), with slug capacity derived from the prefix length.
+- The GitHub App boundary now validates the installation token's returned repository permissions before any provisioning/hardening request is issued, so later tasks fail early on missing app grants rather than after partial work.
+- Centralizing GitHub REST calls behind a single `request(...)` helper keeps future repo creation, repo-variable, branch-protection, and PR-review reads on the same installation-token path with no PAT-primary branch.
+- The single template contract is now one normalized `owner/repo` value behind `PROVISIONING_TEMPLATE_REPOSITORY`; later provisioning code should resolve it once and never branch on template choice.
+- Requester metadata is mirrored as `REQUESTER_LOGIN` plus `.github/provisioning/requester-metadata.json`, with a parser that rejects missing JSON, schema drift, non-canonical timestamps/logins, and variable/file mismatches so enforcement can fail closed deterministically.
+- The provisioning orchestrator now emits one JSON log record per stage (`contract_validation`, `mode_resolution`, `template_source_resolution`, `duplicate_target_preflight`, `create_or_plan`), which gives operators stable stage-level output without coupling tests to ad hoc console text.
+- Duplicate handling works best as a dedicated preflight GET against the target repo path; treating 404 as “available” and any existing repo as a hard failure keeps dry-run and sandbox semantics idempotent without silent reuse.
+- Workflow env parsing must preserve raw `execution_mode` values into canonical validation; coercing unknown values to `undefined` incorrectly turns invalid operator input into the default `dry-run` path.
+- Classic branch protection is easiest to keep auditable when one canonical `main` payload is generated in code and the post-apply verifier checks the same invariants GitHub returns, especially `enforce_admins`, required review count, empty push allowlists, and the `requester-review-policy` required check.
+- Partial-failure handling is clearer when result semantics separate stage logs from top-level readiness: stage records show where failure happened, while `outcome/readiness/scopeSuccess` prevent false "ready" reporting.
+- Quarantine should be explicit and machine-readable (`quarantine.required`, repo identity, remediation actions) whenever repo creation succeeded but downstream hardening failed; this avoids silent partially-secured repos.
+- Modeling future gates as `not_ready` (instead of fake success) allows current-scope verification (`scopeSuccess`) to remain truthful without claiming complete provisioning readiness.
+- Requester-review evaluation is easier to audit when it is split into three deterministic layers: strict review-payload normalization, latest-review collapse per reviewer, and final policy evaluation against the current head SHA plus explicit permission-derived reviewer eligibility.
+- Task 8 evidence works best when one deterministic local harness emits both `.json` and `.txt` artifacts: JSON is the canonical machine-readable record, while the text file is only a quick review summary.
+- Reproducible evidence is easier to diff/review when fixture inputs and timestamps stay fixed; the local mocked sandbox harness now uses stable scenario data and overwrites the same artifact paths on rerun.
+- The live required-check-context gap should be recorded inside each evidence artifact, not buried only in docs, so reviewers can see that local workflow/job-name observation is available while real GitHub check-context proof still requires a true sandbox repository run.
+- Create-path metadata persistence must happen in the real sandbox path, not only stage-detail planning: provisioning now writes `REQUESTER_LOGIN` as a repository variable and commits `.github/provisioning/requester-metadata.json` to `main` before hardening/ready can succeed.
+- Enforcement readiness cannot rely on control-repo file presence: the readiness gate is now driven by target-repository API observations (workflow file present, metadata file present, requester variable present) plus local evaluator availability.
+- Secret-name drift across workflows/docs is easy to miss without a guardrail; adding a dedicated contract test for `GITHUB_APP_*` naming catches regressions before review.
+- Mandatory template-propagation evidence is now pinned to exact target-repo paths `README.md`, `LICENSE`, and `.github/workflows/ci.yml`; provisioning remains non-ready if any of those files are absent after create.

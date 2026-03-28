@@ -1,0 +1,49 @@
+name: provision-repository
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo_slug:
+        description: 'Lowercase project slug; final repo name becomes proj-<repo_slug>'
+        required: true
+        type: string
+      description:
+        description: 'Repository description applied during provisioning'
+        required: true
+        type: string
+      execution_mode:
+        description: 'Internal operator/testing mode'
+        required: false
+        default: dry-run
+        type: choice
+        options:
+          - dry-run
+          - sandbox
+
+jobs:
+  provision:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run provisioning orchestration
+        env:
+          INPUT_REPO_SLUG: ${{ inputs.repo_slug }}
+          INPUT_DESCRIPTION: ${{ inputs.description }}
+          INPUT_EXECUTION_MODE: ${{ inputs.execution_mode }}
+          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
+          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GITHUB_APP_INSTALLATION_ID }}
+          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          PROVISIONING_TEMPLATE_REPOSITORY: ${{ vars.PROVISIONING_TEMPLATE_REPOSITORY }}
+          PROVISIONING_TEMPLATE_REPOSITORY_REF: ${{ vars.PROVISIONING_TEMPLATE_REPOSITORY_REF }}
+          PROVISIONING_SANDBOX_OWNER: ${{ vars.PROVISIONING_SANDBOX_OWNER }}
+          GITHUB_WORKFLOW_REF: .github/workflows/provision-repository.yml@${{ github.ref }}
+        run: npx tsx src/provisioning/run-workflow.ts

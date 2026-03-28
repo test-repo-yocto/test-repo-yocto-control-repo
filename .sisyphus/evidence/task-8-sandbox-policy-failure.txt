@@ -1,0 +1,12 @@
+task=8
+scenario=policy-failure
+execution=mocked-sandbox-integration
+label=LOCAL_SIMULATION_ONLY
+provisioning_outcome=success
+provisioning_ready=ready
+policy_ok=false
+policy_summary=Requester alice must provide a current authorized approval because the PR author is bob.
+required_check_context=requester-review-policy
+live_context_status=observable_but_unverified_locally
+live_context_verified=false
+limitation=This harness can observe the configured required-check string and workflow/job names locally, but GitHub only reveals the final live required-check context after a real workflow run in a real repository.

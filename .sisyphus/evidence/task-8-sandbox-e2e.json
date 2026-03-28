@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "task": 8,
+  "scenario": "success",
+  "generatedAt": "2026-03-28T12:00:00.000Z",
+  "execution": {
+    "kind": "mocked-sandbox-integration",
+    "liveGitHubExercised": false,
+    "label": "LOCAL_SIMULATION_ONLY"
+  },
+  "assertions": {
+    "provisioningReady": true,
+    "requesterPolicyOutcomeObserved": true,
+    "liveContextGapExplicit": true
+  },
+  "provisioning": {
+    "ok": true,
+    "outcome": "success",
+    "readiness": "ready",
+    "scopeSuccess": true,
+    "executionMode": "sandbox",
+    "targetOwner": "test-repo-yocto-sandbox",
+    "targetRepositoryName": "proj-my-service",
+    "scope": {
+      "repositoryCreated": true,
+      "hardeningApplied": true,
+      "hardeningVerified": true,
+      "templateArtifactsVerified": true,
+      "enforcementReady": true
+    },
+    "repository": {
+      "owner": "test-repo-yocto-sandbox",
+      "name": "proj-my-service",
+      "private": true,
+      "url": "https://github.com/test-repo-yocto-sandbox/proj-my-service"
+    },
+    "stages": [
+      {
+        "stage": "contract_validation",
+        "status": "success",
+        "summary": "Provisioning request passed canonical contract validation.",
+        "details": {
+          "repoSlug": "my-service",
+          "targetRepositoryName": "proj-my-service"
+        }
+      },
+      {
+        "stage": "mode_resolution",
+        "status": "success",
+        "summary": "Sandbox mode selected; provisioning will create the repository in the sandbox target.",
+        "details": {
+          "executionMode": "sandbox",
+          "targetOwner": "test-repo-yocto-sandbox",
+          "createEnabled": true
+        }
+      },
+      {
+        "stage": "template_source_resolution",
+        "status": "success",
+        "summary": "Template source resolved from the single approved contract value.",
+        "details": {
+          "template": "test-repo-yocto/template-repository",
+          "ref": "main"
+        }
+      },
+      {
+        "stage": "duplicate_target_preflight",
+        "status": "success",
+        "summary": "Target repository name is available; create path may proceed.",
+        "details": {
+          "owner": "test-repo-yocto-sandbox",
+          "repository": "proj-my-service"
+        }
+      },
+      {
+        "stage": "create_or_plan",
+        "status": "success",
+        "summary": "Sandbox provisioning created the repository from the approved template and persisted requester metadata.",
+        "details": {
+          "owner": "test-repo-yocto-sandbox",
+          "repository": "proj-my-service",
+          "private": true,
+          "url": "https://github.com/test-repo-yocto-sandbox/proj-my-service",
+          "template": "test-repo-yocto/template-repository",
+          "templateRef": "main",
+          "requesterMetadata": {
+            "repositoryVariable": {
+              "name": "REQUESTER_LOGIN",
+              "value": "alice"
+            },
+            "metadataFilePath": ".github/provisioning/requester-metadata.json",
+            "metadataKind": "test-repo-yocto/requester-metadata",
+            "requesterLogin": "alice"
+          }
+        }
+      },
+      {
+        "stage": "branch_protection_apply",
+        "status": "success",
+        "summary": "Classic branch protection payload submitted for main.",
+        "details": {
+          "owner": "test-repo-yocto-sandbox",
+          "repository": "proj-my-service",
+          "branch": "main"
+        }
+      },
+      {
+        "stage": "branch_protection_verify",
+        "status": "success",
+        "summary": "Classic main branch protection verified after application.",
+        "details": {
+          "owner": "test-repo-yocto-sandbox",
+          "repository": "proj-my-service",
+          "branch": "main"
+        }
+      },
+      {
+        "stage": "template_artifact_verify",
+        "status": "success",
+        "summary": "Required template artifacts were verified in the provisioned target repository.",
+        "details": {
+          "owner": "test-repo-yocto-sandbox",
+          "repository": "proj-my-service",
+          "ref": "main",
+          "requiredArtifacts": [
+            {
+              "key": "readme",
+              "label": "README",
+              "path": "README.md"
+            },
+            {
+              "key": "license",
+              "label": "LICENSE",
+              "path": "LICENSE"
+            },
+            {
+              "key": "default_ci_workflow",
+              "label": "default CI workflow",
+              "path": ".github/workflows/ci.yml"
+            }
+          ],
+          "presentArtifacts": [
+            "README.md",
+            "LICENSE",
+            ".github/workflows/ci.yml"
+          ],
+          "missingArtifacts": []
+        }
+      },
+      {
+        "stage": "enforcement_readiness_verify",
+        "status": "success",
+        "summary": "Mocked local harness verified target-repository readiness signals only; live required-check context still needs a real sandbox/org run.",
+        "details": {
+          "owner": "test-repo-yocto-sandbox",
+          "repository": "proj-my-service",
+          "readinessDetails": {
+            "mode": "mocked-local-sandbox-integration",
+            "readinessSignalsReadFromTargetRepository": true,
+            "liveRequiredCheckContextVerified": false
+          }
+        }
+      }
+    ]
+  },
+  "requesterReviewPolicy": {
+    "ok": true,
+    "summary": "Requester alice has provided the required current authorized approval for a PR authored by bob.",
+    "requesterLogin": "alice",
+    "prAuthorLogin": "bob",
+    "headCommitSha": "head-sha",
+    "requiredApproval": {
+      "type": "requester",
+      "reviewerLogin": "alice"
+    },
+    "qualifyingApprovals": [
+      {
+        "reviewerLogin": "alice",
+        "permissionLevel": "write",
+        "countsTowardNativeReviewRequirement": true,
+        "commitId": "head-sha",
+        "reviewId": 101
+      }
+    ],
+    "ignoredApprovals": []
+  },
+  "liveRequiredCheckContextObservation": {
+    "status": "observable_but_unverified_locally",
+    "expectedRequiredCheckContext": "requester-review-policy",
+    "workflowPath": ".github/workflows/requester-review-policy.yml",
+    "workflowName": "requester-review-policy",
+    "workflowJobId": "requester-review-policy",
+    "workflowJobName": "requester-review-policy",
+    "localNamesMatchExpectedContext": true,
+    "liveGitHubCheckContextVerified": false,
+    "explanation": "This harness can observe the configured required-check string and workflow/job names locally, but GitHub only reveals the final live required-check context after a real workflow run in a real repository.",
+    "nextVerificationStep": "Run the requester-review-policy workflow in a real sandbox repository and compare the emitted check context visible in branch protection / PR checks against requester-review-policy."
+  }
+}

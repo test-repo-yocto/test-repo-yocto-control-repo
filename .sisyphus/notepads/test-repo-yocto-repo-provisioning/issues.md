@@ -1,0 +1,9 @@
+# Issues
+
+- `execution_mode` is scaffolded because the plan allows an internal mode for dry-run vs sandbox validation, but later workflow tasks should confirm whether it remains a manual dispatch input or moves behind a reusable/internal invocation boundary.
+- Organization-level GitHub App installation constraints are still external to this codebase; later provisioning work must verify the app is actually installed on `test-repo-yocto` with repository creation allowed by org policy, because runtime code can only surface the resulting auth/permission failure.
+- Classic branch protection verification can only confirm the live branch-protection representation GitHub returns; later sandbox/e2e work should validate actual PR/push behavior against a real repository because merge-button and push-attempt enforcement still depends on platform behavior outside unit tests.
+- Full readiness currently defaults to `not_ready` unless an enforcement-readiness signal is provided; Task 7 must supply real requester-review enforcement verification so successful sandbox runs can graduate from scope-success to fully ready success.
+- Task 8 still needs sandbox/e2e evidence that the GitHub Actions job named `requester-review-policy` produces the exact required-check context GitHub branch protection enforces in a live repository, since local tests only verify deterministic code paths.
+- Task 8 local evidence now exposes the required-check-context gap directly in `.sisyphus/evidence/task-8-*.json`, but a final-wave real org/sandbox run is still required to confirm the live GitHub check context string and merge gating behavior match the local `requester-review-policy` expectation.
+- Remaining live-only limit: local/unit tests now verify target-repo artifact checks and metadata persistence calls, but final verification still needs a real sandbox repository run to confirm API permissions and commit-context behavior under live GitHub conditions.

@@ -1,0 +1,25 @@
+{
+  "name": "test-repo-yocto-control-repo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Control repository scaffold for provisioning hardened proj-* repositories.",
+  "scripts": {
+    "test": "vitest run",
+    "test:task8": "vitest run tests/task-8-evidence-harness.test.ts tests/provisioning-orchestration.test.ts tests/requester-review-policy.test.ts tests/branch-protection.test.ts",
+    "verify:sandbox": "tsx scripts/generate-task-8-evidence.ts --scenario all",
+    "evidence:task8": "npm run verify:sandbox",
+    "evidence:task8:success": "tsx scripts/generate-task-8-evidence.ts --scenario success",
+    "evidence:task8:policy-failure": "tsx scripts/generate-task-8-evidence.ts --scenario policy-failure",
+    "check": "tsc --noEmit"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^24.6.0",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

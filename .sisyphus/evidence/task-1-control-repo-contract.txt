@@ -1,0 +1,14 @@
+
+> test-repo-yocto-control-repo@0.1.0 test
+> vitest run
+
+
+ RUN  v3.2.4 /Users/krnomad/work/ai/gb-test
+
+ ✓ tests/provisioning-contract.test.ts (11 tests) 3ms
+
+ Test Files  1 passed (1)
+      Tests  11 passed (11)
+   Start at  19:32:59
+   Duration  314ms (transform 19ms, setup 0ms, collect 20ms, tests 3ms, environment 0ms, prepare 34ms)
+

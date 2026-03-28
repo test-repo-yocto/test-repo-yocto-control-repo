@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "task": 8,
+  "generatedAt": "2026-03-28T12:00:00.000Z",
+  "execution": {
+    "kind": "mocked-sandbox-integration",
+    "liveGitHubExercised": false,
+    "label": "LOCAL_SIMULATION_ONLY"
+  },
+  "scenarios": [
+    {
+      "scenario": "success",
+      "jsonArtifact": "/Users/krnomad/work/ai/gb-test/.sisyphus/evidence/task-8-sandbox-e2e.json",
+      "textArtifact": "/Users/krnomad/work/ai/gb-test/.sisyphus/evidence/task-8-sandbox-e2e.txt",
+      "provisioningOutcome": "success",
+      "requesterPolicyOk": true
+    },
+    {
+      "scenario": "policy-failure",
+      "jsonArtifact": "/Users/krnomad/work/ai/gb-test/.sisyphus/evidence/task-8-sandbox-policy-failure.json",
+      "textArtifact": "/Users/krnomad/work/ai/gb-test/.sisyphus/evidence/task-8-sandbox-policy-failure.txt",
+      "provisioningOutcome": "success",
+      "requesterPolicyOk": false
+    }
+  ]
+}
