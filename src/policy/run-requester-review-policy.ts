@@ -7,6 +7,7 @@ import {
 } from '../contracts/template-metadata.js';
 import { createGitHubAppAuth } from '../github/auth.js';
 import { createGitHubApiClient } from '../github/client.js';
+import { loadGitHubAppRuntimeCredentials } from '../provisioning/github-actions-config.js';
 import {
   buildRequesterReviewPolicyReviews,
   evaluateRequesterReviewPolicy,
@@ -27,13 +28,10 @@ interface PullRequestPolicyContext {
 }
 
 async function main(): Promise<void> {
+  const credentials = loadGitHubAppRuntimeCredentials(process.env);
   const client = createGitHubApiClient({
     auth: createGitHubAppAuth({
-      credentials: {
-        appId: requiredEnv('GITHUB_APP_ID'),
-        installationId: requiredEnv('GITHUB_APP_INSTALLATION_ID'),
-        privateKey: requiredEnv('GITHUB_APP_PRIVATE_KEY'),
-      },
+      credentials,
     }),
   });
   const context = readPolicyContext(requiredEnv('GITHUB_EVENT_PATH'));

@@ -102,12 +102,14 @@ Required runtime inputs/config:
 - `repo_slug`
 - `description`
 - `execution_mode`
-- `GITHUB_APP_ID`
-- `GITHUB_APP_INSTALLATION_ID`
-- `GITHUB_APP_PRIVATE_KEY`
+- `PROVISIONING_GITHUB_APP_ID`
+- `PROVISIONING_GITHUB_APP_INSTALLATION_ID`
+- `PROVISIONING_GITHUB_APP_PRIVATE_KEY`
 - `PROVISIONING_TEMPLATE_REPOSITORY`
 - optional `PROVISIONING_TEMPLATE_REPOSITORY_REF`
 - optional `PROVISIONING_SANDBOX_OWNER`
+
+GitHub Actions repository/org secrets cannot start with `GITHUB_`, so the supported Actions contract uses the `PROVISIONING_GITHUB_APP_*` secret family. Legacy `GITHUB_APP_*` env names are retained only as local/manual fallback inputs outside the primary Actions setup path.
 
 ## Current boundary
 

@@ -4,13 +4,13 @@ import { pathToFileURL } from 'node:url';
 import { createGitHubAppAuth } from '../github/auth.js';
 import { createGitHubApiClient } from '../github/client.js';
 import { getRequesterReviewEnforcementReadinessForRepository } from '../policy/requester-review-policy.js';
+import {
+  formatGitHubAppSecretContract,
+  formatLegacyGitHubAppFallbackNote,
+  getConfiguredGitHubActionsSecretNames,
+  loadGitHubAppRuntimeCredentials,
+} from './github-actions-config.js';
 import { formatProvisioningStageLogs, runProvisioningWorkflow } from './orchestration.js';
-
-const REQUIRED_GITHUB_ACTIONS_SECRETS = [
-  'GITHUB_APP_ID',
-  'GITHUB_APP_INSTALLATION_ID',
-  'GITHUB_APP_PRIVATE_KEY',
-] as const;
 
 const REQUIRED_GITHUB_ACTIONS_VARIABLES = ['PROVISIONING_TEMPLATE_REPOSITORY'] as const;
 
@@ -85,7 +85,7 @@ export interface ProvisioningRuntimeConfig {
 }
 
 export function loadProvisioningRuntimeConfig(env: RunWorkflowEnvironment = process.env): ProvisioningRuntimeConfig {
-  const missingSecrets = missingEnvNames(env, REQUIRED_GITHUB_ACTIONS_SECRETS);
+  const missingSecrets = getConfiguredGitHubActionsSecretNames(env);
   const missingVariables = missingEnvNames(env, REQUIRED_GITHUB_ACTIONS_VARIABLES);
 
   if (missingSecrets.length > 0 || missingVariables.length > 0) {
@@ -94,9 +94,7 @@ export function loadProvisioningRuntimeConfig(env: RunWorkflowEnvironment = proc
 
   return {
     githubApp: {
-      appId: requiredEnv('GITHUB_APP_ID', env),
-      installationId: requiredEnv('GITHUB_APP_INSTALLATION_ID', env),
-      privateKey: requiredEnv('GITHUB_APP_PRIVATE_KEY', env),
+      ...loadGitHubAppRuntimeCredentials(env),
     },
     templateRepository: requiredEnv('PROVISIONING_TEMPLATE_REPOSITORY', env),
     templateRef: optionalExecutionMode(env.PROVISIONING_TEMPLATE_REPOSITORY_REF),
@@ -125,10 +123,11 @@ export function formatMissingGitHubActionsConfigurationError(input: {
     '',
     'Configure these values in GitHub before rerunning the workflow:',
     '- Repository Settings → Secrets and variables → Actions, or the organization-level Secrets and Variables pages if this control repository inherits shared provisioning config.',
-    '- Secrets: GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, GITHUB_APP_PRIVATE_KEY',
+    `- Secrets: ${formatGitHubAppSecretContract()}`,
     '- Variables: PROVISIONING_TEMPLATE_REPOSITORY',
     `- Optional variables used by this workflow: ${OPTIONAL_GITHUB_ACTIONS_VARIABLES.join(', ')}`,
     '- PROVISIONING_TEMPLATE_REPOSITORY must be set to the approved template repository in <owner>/<repo> form.',
+    `- ${formatLegacyGitHubAppFallbackNote()}`,
   );
 
   return lines.join('\n');

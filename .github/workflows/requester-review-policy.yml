@@ -35,9 +35,9 @@ jobs:
 
       - name: Evaluate requester-review policy
         env:
-          GITHUB_APP_ID: ${{ secrets.GITHUB_APP_ID }}
-          GITHUB_APP_INSTALLATION_ID: ${{ secrets.GITHUB_APP_INSTALLATION_ID }}
-          GITHUB_APP_PRIVATE_KEY: ${{ secrets.GITHUB_APP_PRIVATE_KEY }}
+          PROVISIONING_GITHUB_APP_ID: ${{ secrets.PROVISIONING_GITHUB_APP_ID }}
+          PROVISIONING_GITHUB_APP_INSTALLATION_ID: ${{ secrets.PROVISIONING_GITHUB_APP_INSTALLATION_ID }}
+          PROVISIONING_GITHUB_APP_PRIVATE_KEY: ${{ secrets.PROVISIONING_GITHUB_APP_PRIVATE_KEY }}
         run: node --import tsx ./src/policy/run-requester-review-policy.ts
 
       - name: Upload policy result

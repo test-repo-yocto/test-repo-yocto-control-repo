@@ -37,9 +37,21 @@ npm run check
 
 필수 GitHub Actions secrets:
 
-- `GITHUB_APP_ID`: 프로비저닝용 GitHub App ID
-- `GITHUB_APP_INSTALLATION_ID`: 위 App의 설치 ID
-- `GITHUB_APP_PRIVATE_KEY`: GitHub App private key PEM
+- `PROVISIONING_GITHUB_APP_ID`: 프로비저닝용 GitHub App ID
+- `PROVISIONING_GITHUB_APP_INSTALLATION_ID`: 위 App의 설치 ID
+- `PROVISIONING_GITHUB_APP_PRIVATE_KEY`: GitHub App private key PEM
+
+중요한 제약:
+
+- GitHub Actions의 repository/org secret 이름은 `GITHUB_`로 시작할 수 없습니다.
+- 그래서 `GITHUB_APP_ID` 같은 이름은 로컬 수동 실행용 fallback으로만 남기고, 실제 Actions secret 계약은 반드시 `PROVISIONING_GITHUB_APP_*`로 맞춰야 합니다.
+- 실제 `gh secret set` 예시는 아래처럼 써야 합니다.
+
+```bash
+gh secret set PROVISIONING_GITHUB_APP_ID
+gh secret set PROVISIONING_GITHUB_APP_INSTALLATION_ID
+gh secret set PROVISIONING_GITHUB_APP_PRIVATE_KEY
+```
 
 필수 GitHub Actions variables:
 
@@ -52,7 +64,8 @@ npm run check
 
 실무 팁:
 
-- App 관련 3개 값(`GITHUB_APP_*`)은 일반적으로 secret으로 넣어야 합니다.
+- App 관련 3개 값은 GitHub Actions에서는 `PROVISIONING_GITHUB_APP_*` secret으로 넣어야 합니다.
+- 기존 `GITHUB_APP_*` 이름은 GitHub Actions secret 이름으로는 invalid이므로 repo/org secret 설정 계약으로 사용하면 안 됩니다.
 - 템플릿 저장소와 sandbox owner는 보통 variable로 관리하면 운영자가 바꾸기 쉽습니다.
 - repo 수준 또는 org 수준 중 하나에만 정확히 설정되어도 되지만, 워크플로가 실제로 상속받는 위치에 존재해야 합니다.
 
