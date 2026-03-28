@@ -1,11 +1,29 @@
 import { appendFileSync } from 'node:fs';
+import { pathToFileURL } from 'node:url';
 
 import { createGitHubAppAuth } from '../github/auth.js';
 import { createGitHubApiClient } from '../github/client.js';
 import { getRequesterReviewEnforcementReadinessForRepository } from '../policy/requester-review-policy.js';
 import { formatProvisioningStageLogs, runProvisioningWorkflow } from './orchestration.js';
 
+const REQUIRED_GITHUB_ACTIONS_SECRETS = [
+  'GITHUB_APP_ID',
+  'GITHUB_APP_INSTALLATION_ID',
+  'GITHUB_APP_PRIVATE_KEY',
+] as const;
+
+const REQUIRED_GITHUB_ACTIONS_VARIABLES = ['PROVISIONING_TEMPLATE_REPOSITORY'] as const;
+
+const OPTIONAL_GITHUB_ACTIONS_VARIABLES = [
+  'PROVISIONING_TEMPLATE_REPOSITORY_REF',
+  'PROVISIONING_SANDBOX_OWNER',
+] as const;
+
+type RunWorkflowEnvironment = NodeJS.ProcessEnv;
+
 async function main(): Promise<void> {
+  const runtimeConfig = loadProvisioningRuntimeConfig();
+
   const result = await runProvisioningWorkflow(
     {
       repo_slug: requiredEnv('INPUT_REPO_SLUG'),
@@ -16,19 +34,19 @@ async function main(): Promise<void> {
       client: createGitHubApiClient({
         auth: createGitHubAppAuth({
           credentials: {
-            appId: requiredEnv('GITHUB_APP_ID'),
-            installationId: requiredEnv('GITHUB_APP_INSTALLATION_ID'),
-            privateKey: requiredEnv('GITHUB_APP_PRIVATE_KEY'),
+            appId: runtimeConfig.githubApp.appId,
+            installationId: runtimeConfig.githubApp.installationId,
+            privateKey: runtimeConfig.githubApp.privateKey,
           },
         }),
       }),
       config: {
-        templateRepository: requiredEnv('PROVISIONING_TEMPLATE_REPOSITORY'),
-        templateRef: process.env.PROVISIONING_TEMPLATE_REPOSITORY_REF,
+        templateRepository: runtimeConfig.templateRepository,
+        templateRef: runtimeConfig.templateRef,
         requesterLogin: requiredEnv('GITHUB_ACTOR'),
         workflowRef:
           process.env.GITHUB_WORKFLOW_REF ?? '.github/workflows/provision-repository.yml@refs/heads/main',
-        sandboxOwner: process.env.PROVISIONING_SANDBOX_OWNER,
+        sandboxOwner: runtimeConfig.sandboxOwner,
         enforcementReadinessCheck: ({ owner, repo, ref, client }) =>
           getRequesterReviewEnforcementReadinessForRepository({
             client,
@@ -55,8 +73,69 @@ async function main(): Promise<void> {
   }
 }
 
-function requiredEnv(name: string): string {
-  const value = process.env[name]?.trim();
+export interface ProvisioningRuntimeConfig {
+  githubApp: {
+    appId: string;
+    installationId: string;
+    privateKey: string;
+  };
+  templateRepository: string;
+  templateRef?: string;
+  sandboxOwner?: string;
+}
+
+export function loadProvisioningRuntimeConfig(env: RunWorkflowEnvironment = process.env): ProvisioningRuntimeConfig {
+  const missingSecrets = missingEnvNames(env, REQUIRED_GITHUB_ACTIONS_SECRETS);
+  const missingVariables = missingEnvNames(env, REQUIRED_GITHUB_ACTIONS_VARIABLES);
+
+  if (missingSecrets.length > 0 || missingVariables.length > 0) {
+    throw new Error(formatMissingGitHubActionsConfigurationError({ missingSecrets, missingVariables }));
+  }
+
+  return {
+    githubApp: {
+      appId: requiredEnv('GITHUB_APP_ID', env),
+      installationId: requiredEnv('GITHUB_APP_INSTALLATION_ID', env),
+      privateKey: requiredEnv('GITHUB_APP_PRIVATE_KEY', env),
+    },
+    templateRepository: requiredEnv('PROVISIONING_TEMPLATE_REPOSITORY', env),
+    templateRef: optionalExecutionMode(env.PROVISIONING_TEMPLATE_REPOSITORY_REF),
+    sandboxOwner: optionalExecutionMode(env.PROVISIONING_SANDBOX_OWNER),
+  };
+}
+
+export function formatMissingGitHubActionsConfigurationError(input: {
+  missingSecrets: string[];
+  missingVariables: string[];
+}): string {
+  const lines = [
+    'GitHub Actions provisioning configuration is incomplete.',
+    'This workflow requires GitHub Actions secrets and variables to be configured before src/provisioning/run-workflow.ts can authenticate and resolve the approved template.',
+  ];
+
+  if (input.missingSecrets.length > 0) {
+    lines.push('', 'Missing required GitHub Actions secrets:', ...input.missingSecrets.map((name) => `- ${name}`));
+  }
+
+  if (input.missingVariables.length > 0) {
+    lines.push('', 'Missing required GitHub Actions variables:', ...input.missingVariables.map((name) => `- ${name}`));
+  }
+
+  lines.push(
+    '',
+    'Configure these values in GitHub before rerunning the workflow:',
+    '- Repository Settings → Secrets and variables → Actions, or the organization-level Secrets and Variables pages if this control repository inherits shared provisioning config.',
+    '- Secrets: GITHUB_APP_ID, GITHUB_APP_INSTALLATION_ID, GITHUB_APP_PRIVATE_KEY',
+    '- Variables: PROVISIONING_TEMPLATE_REPOSITORY',
+    `- Optional variables used by this workflow: ${OPTIONAL_GITHUB_ACTIONS_VARIABLES.join(', ')}`,
+    '- PROVISIONING_TEMPLATE_REPOSITORY must be set to the approved template repository in <owner>/<repo> form.',
+  );
+
+  return lines.join('\n');
+}
+
+function requiredEnv(name: string, env: RunWorkflowEnvironment = process.env): string {
+  const value = env[name]?.trim();
 
   if (!value) {
     throw new Error(`${name} is required.`);
@@ -73,6 +152,10 @@ function optionalExecutionMode(value: string | undefined): string | undefined {
   return value.trim();
 }
 
+function missingEnvNames(env: RunWorkflowEnvironment, names: readonly string[]): string[] {
+  return names.filter((name) => !env[name]?.trim());
+}
+
 function writeGitHubOutput(name: string, value: string): void {
   if (!process.env.GITHUB_OUTPUT) {
     return;
@@ -81,4 +164,6 @@ function writeGitHubOutput(name: string, value: string): void {
   appendFileSync(process.env.GITHUB_OUTPUT, `${name}=${value}\n`);
 }
 
-void main();
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  void main();
+}

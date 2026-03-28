@@ -26,6 +26,43 @@ npm run check
 - `npm test`: 전체 테스트를 실행해서 현재 구현이 깨지지 않았는지 확인합니다.
 - `npm run check`: TypeScript 타입 검사만 수행합니다.
 
+### GitHub Actions 설정 먼저 하기
+
+`provision-repository` 워크플로를 실제로 실행하기 전에, GitHub 쪽에 필요한 Secrets/Variables가 먼저 준비되어 있어야 합니다. 이 값들이 없으면 `src/provisioning/run-workflow.ts`는 즉시 실패하며, 어떤 GitHub Actions secret/variable이 빠졌는지와 어디서 설정해야 하는지를 함께 안내합니다.
+
+설정 위치:
+
+- 저장소 단위: `Settings → Secrets and variables → Actions`
+- 조직 공용 값으로 관리할 경우: Organization `Settings → Secrets and variables → Actions`
+
+필수 GitHub Actions secrets:
+
+- `GITHUB_APP_ID`: 프로비저닝용 GitHub App ID
+- `GITHUB_APP_INSTALLATION_ID`: 위 App의 설치 ID
+- `GITHUB_APP_PRIVATE_KEY`: GitHub App private key PEM
+
+필수 GitHub Actions variables:
+
+- `PROVISIONING_TEMPLATE_REPOSITORY`: 승인된 템플릿 저장소. 반드시 `<owner>/<repo>` 형식이어야 합니다.
+
+선택 GitHub Actions variables:
+
+- `PROVISIONING_TEMPLATE_REPOSITORY_REF`: 템플릿에서 사용할 ref. 비워두면 구현의 기본 ref 해석을 따릅니다.
+- `PROVISIONING_SANDBOX_OWNER`: dry-run preflight와 sandbox 생성 대상 owner/org. 비어 있으면 현재 구현은 `test-repo-yocto`로 fallback 합니다.
+
+실무 팁:
+
+- App 관련 3개 값(`GITHUB_APP_*`)은 일반적으로 secret으로 넣어야 합니다.
+- 템플릿 저장소와 sandbox owner는 보통 variable로 관리하면 운영자가 바꾸기 쉽습니다.
+- repo 수준 또는 org 수준 중 하나에만 정확히 설정되어도 되지만, 워크플로가 실제로 상속받는 위치에 존재해야 합니다.
+
+설정 후에는 아래처럼 다시 검증하면 됩니다.
+
+```bash
+npm test
+npm run check
+```
+
 ### 실무에서 어떻게 보나
 
 운영자는 이 저장소에서 아래 내용을 확인합니다.
