@@ -1,6 +1,5 @@
 export const PROVISIONING_TEMPLATE_REPOSITORY_CONFIG_KEY = 'PROVISIONING_TEMPLATE_REPOSITORY';
 export const DEFAULT_TEMPLATE_SOURCE_REF = 'main';
-export const REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME = 'REQUESTER_LOGIN';
 export const REQUESTER_METADATA_FILE_PATH = '.github/provisioning/requester-metadata.json';
 export const REQUIRED_TEMPLATE_ARTIFACT_PATHS = {
   readme: 'README.md',
@@ -49,11 +48,6 @@ export interface ApprovedTemplateSource {
 
 export type RequiredTemplateArtifact = (typeof REQUIRED_TEMPLATE_ARTIFACTS)[number];
 
-export interface RequesterLoginRepositoryVariable {
-  name: typeof REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME;
-  value: string;
-}
-
 export interface RequesterMetadataFile {
   kind: typeof REQUESTER_METADATA_KIND;
   schema_version: typeof REQUESTER_METADATA_SCHEMA_VERSION;
@@ -66,7 +60,6 @@ export interface ParsedRequesterMetadata {
   requesterLogin: string;
   provisionedAt: string;
   provisionedByWorkflow: string;
-  repositoryVariable: RequesterLoginRepositoryVariable;
   metadataFilePath: typeof REQUESTER_METADATA_FILE_PATH;
   metadataFile: RequesterMetadataFile;
 }
@@ -78,7 +71,6 @@ export interface CreateRequesterMetadataInput {
 }
 
 export interface RequesterMetadataArtifacts {
-  repositoryVariable: RequesterLoginRepositoryVariable;
   metadataFilePath: typeof REQUESTER_METADATA_FILE_PATH;
   metadataFile: RequesterMetadataFile;
   metadataFileContents: string;
@@ -87,7 +79,6 @@ export interface RequesterMetadataArtifacts {
 
 export interface ParseRequesterMetadataInput {
   metadataFileContent: string | RequesterMetadataFile | unknown;
-  repositoryVariableValue?: unknown;
 }
 
 export function normalizeApprovedTemplateSource(
@@ -130,7 +121,6 @@ export function createRequesterMetadataArtifacts(
   const requesterLogin = normalizeRequesterLoginInput(input.requesterLogin);
   const provisionedAt = normalizeProvisionedAt(input.provisionedAt);
   const provisionedByWorkflow = normalizeProvisionedByWorkflow(input.provisionedByWorkflow);
-  const repositoryVariable = createRequesterLoginRepositoryVariable(requesterLogin);
   const metadataFile: RequesterMetadataFile = {
     kind: REQUESTER_METADATA_KIND,
     schema_version: REQUESTER_METADATA_SCHEMA_VERSION,
@@ -140,7 +130,6 @@ export function createRequesterMetadataArtifacts(
   };
 
   return {
-    repositoryVariable,
     metadataFilePath: REQUESTER_METADATA_FILE_PATH,
     metadataFile,
     metadataFileContents: serializeRequesterMetadataFile(metadataFile),
@@ -148,19 +137,9 @@ export function createRequesterMetadataArtifacts(
       requesterLogin,
       provisionedAt,
       provisionedByWorkflow,
-      repositoryVariable,
       metadataFilePath: REQUESTER_METADATA_FILE_PATH,
       metadataFile,
     },
-  };
-}
-
-export function createRequesterLoginRepositoryVariable(
-  requesterLogin: string,
-): RequesterLoginRepositoryVariable {
-  return {
-    name: REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME,
-    value: normalizeRequesterLoginInput(requesterLogin),
   };
 }
 
@@ -170,23 +149,10 @@ export function parseRequesterMetadata(input: ParseRequesterMetadataInput): Pars
   const provisionedAt = normalizeProvisionedAt(metadataFile.provisioned_at);
   const provisionedByWorkflow = normalizeProvisionedByWorkflow(metadataFile.provisioned_by_workflow);
 
-  if (input.repositoryVariableValue !== undefined) {
-    const repositoryVariableValue = normalizeRequesterLoginRepositoryVariableValue(input.repositoryVariableValue);
-
-    if (repositoryVariableValue !== requesterLogin) {
-      throw new ProvisioningMetadataContractError(
-        `Requester metadata mismatch: repository variable ${REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME} must exactly match ${REQUESTER_METADATA_FILE_PATH}.`,
-      );
-    }
-  }
-
-  const repositoryVariable = createRequesterLoginRepositoryVariable(requesterLogin);
-
   return {
     requesterLogin,
     provisionedAt,
     provisionedByWorkflow,
-    repositoryVariable,
     metadataFilePath: REQUESTER_METADATA_FILE_PATH,
     metadataFile: {
       kind: REQUESTER_METADATA_KIND,
@@ -232,16 +198,6 @@ export function parseRequesterMetadataFile(content: string | RequesterMetadataFi
 
 export function serializeRequesterMetadataFile(metadata: RequesterMetadataFile): string {
   return `${JSON.stringify(metadata, null, 2)}\n`;
-}
-
-function normalizeRequesterLoginRepositoryVariableValue(value: unknown): string {
-  if (typeof value !== 'string') {
-    throw new ProvisioningMetadataContractError(
-      `Repository variable ${REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME} is required when provided and must be a string.`,
-    );
-  }
-
-  return parseCanonicalRequesterLogin(value);
 }
 
 function normalizeRequesterLoginInput(value: string): string {

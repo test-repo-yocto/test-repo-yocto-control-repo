@@ -13,12 +13,10 @@ interface TestDependencies extends ProvisioningWorkflowDependencies {
     mocks: {
       getRepository: ReturnType<typeof vi.fn>;
       createRepositoryFromTemplate: ReturnType<typeof vi.fn>;
-      upsertRepositoryVariable: ReturnType<typeof vi.fn>;
       upsertRepositoryFile: ReturnType<typeof vi.fn>;
       updateBranchProtection: ReturnType<typeof vi.fn>;
       getBranchProtection: ReturnType<typeof vi.fn>;
       getRepositoryContent: ReturnType<typeof vi.fn>;
-      getRepositoryVariable: ReturnType<typeof vi.fn>;
     };
 }
 
@@ -38,10 +36,6 @@ function createDependencies(options?: {
     html_url: 'https://github.com/test-repo-yocto/proj-my-service',
   }));
   const updateBranchProtection = vi.fn<(input: unknown) => Promise<unknown>>(async () => ({ ok: true }));
-  const upsertRepositoryVariable = vi.fn<(input: unknown) => Promise<unknown>>(async () => ({
-    name: 'REQUESTER_LOGIN',
-    value: 'alice',
-  }));
   const upsertRepositoryFile = vi.fn<(input: unknown) => Promise<unknown>>(async () => ({
     content: {
       path: '.github/provisioning/requester-metadata.json',
@@ -70,23 +64,17 @@ function createDependencies(options?: {
   const getRepositoryContent = vi.fn<(owner: string, repo: string, path: string, ref?: string) => Promise<unknown>>(
     async () => ({ type: 'file' }),
   );
-  const getRepositoryVariable = vi.fn<(owner: string, repo: string, name: string) => Promise<unknown>>(
-    async () => ({ name: 'REQUESTER_LOGIN', value: 'alice' }),
-  );
 
   return {
     client: {
       getRepository: async <T = unknown>(input: unknown) => getRepository(input) as Promise<T>,
       createRepositoryFromTemplate: async <T = unknown>(input: unknown) =>
         createRepositoryFromTemplate(input) as Promise<T>,
-      upsertRepositoryVariable: async <T = unknown>(input: unknown) => upsertRepositoryVariable(input) as Promise<T>,
       upsertRepositoryFile: async <T = unknown>(input: unknown) => upsertRepositoryFile(input) as Promise<T>,
       updateBranchProtection: async <T = unknown>(input: unknown) => updateBranchProtection(input) as Promise<T>,
       getBranchProtection: async <T = unknown>(input: unknown) => getBranchProtection(input) as Promise<T>,
       getRepositoryContent: async <T = unknown>(owner: string, repo: string, path: string, ref?: string) =>
         getRepositoryContent(owner, repo, path, ref) as Promise<T>,
-      getRepositoryVariable: async <T = unknown>(owner: string, repo: string, name: string) =>
-        getRepositoryVariable(owner, repo, name) as Promise<T>,
     },
     config: {
       templateRepository: 'test-repo-yocto/template-repository',
@@ -99,12 +87,10 @@ function createDependencies(options?: {
     mocks: {
       getRepository,
       createRepositoryFromTemplate,
-      upsertRepositoryVariable,
       upsertRepositoryFile,
       updateBranchProtection,
       getBranchProtection,
       getRepositoryContent,
-      getRepositoryVariable,
     },
   };
 }
@@ -182,12 +168,7 @@ describe('runProvisioningWorkflow', () => {
       description: 'sandbox repo',
       private: true,
     });
-    expect(dependencies.mocks.upsertRepositoryVariable).toHaveBeenCalledWith({
-      owner: 'test-repo-yocto-sandbox',
-      repo: 'proj-my-service',
-      name: 'REQUESTER_LOGIN',
-      value: 'alice',
-    });
+    expect(dependencies.mocks.upsertRepositoryFile).toHaveBeenCalledTimes(1);
     expect(dependencies.mocks.upsertRepositoryFile).toHaveBeenCalledWith({
       owner: 'test-repo-yocto-sandbox',
       repo: 'proj-my-service',
@@ -532,11 +513,10 @@ describe('runProvisioningWorkflow', () => {
       enforcementReadinessCheck: async ({ client, owner, repo, ref }) => {
         await client.getRepositoryContent(owner, repo, '.github/workflows/requester-review-policy.yml', ref);
         await client.getRepositoryContent(owner, repo, '.github/provisioning/requester-metadata.json', ref);
-        await client.getRepositoryVariable(owner, repo, 'REQUESTER_LOGIN');
 
         return {
           ready: true,
-          summary: 'Target repository contains workflow and requester metadata artifacts.',
+          summary: 'Target repository contains workflow and requester metadata file artifacts.',
           details: {
             owner,
             repo,
@@ -579,11 +559,6 @@ describe('runProvisioningWorkflow', () => {
       'proj-my-service',
       '.github/provisioning/requester-metadata.json',
       'main',
-    );
-    expect(dependencies.mocks.getRepositoryVariable).toHaveBeenCalledWith(
-      'test-repo-yocto-sandbox',
-      'proj-my-service',
-      'REQUESTER_LOGIN',
     );
   });
 

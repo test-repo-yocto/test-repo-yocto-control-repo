@@ -46,4 +46,4 @@ Source of truth: `src/contracts/provisioning.ts`
 ## Related contracts
 
 - Single approved template source: `docs/requester-metadata-contract.md`
-- Requester metadata variable/file schema: `docs/requester-metadata-contract.md`
+- Requester metadata file schema: `docs/requester-metadata-contract.md`

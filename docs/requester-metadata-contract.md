@@ -19,16 +19,13 @@ Provisioning success verification now treats these template-delivered target-rep
 
 ## Requester metadata storage strategy
 
-The plan default is preserved as two mirrored artifacts created during provisioning:
+Requester metadata is persisted as a single canonical tracked artifact during provisioning:
 
-1. **Repository variable**
-   - Name: `REQUESTER_LOGIN`
-   - Value: canonical lowercase GitHub login of the original requester
-2. **Tracked metadata file**
-   - Path inside created repositories: `.github/provisioning/requester-metadata.json`
-   - Purpose: in-repo audit/debugging surface for later requester-review enforcement
+- **Tracked metadata file**
+  - Path inside created repositories: `.github/provisioning/requester-metadata.json`
+  - Purpose: canonical requester identity + provenance for requester-review enforcement
 
-The repository variable and tracked file are not independent sources of truth. They must carry the same requester login. If both are available and disagree, consumers must fail closed.
+This file is now the only source of truth for requester metadata in live-critical paths.
 
 ## Metadata file schema
 
@@ -59,10 +56,6 @@ Normalized runtime shape:
   requesterLogin: string;
   provisionedAt: string;
   provisionedByWorkflow: string;
-  repositoryVariable: {
-    name: 'REQUESTER_LOGIN';
-    value: string;
-  };
   metadataFilePath: '.github/provisioning/requester-metadata.json';
   metadataFile: {
     kind: 'test-repo-yocto/requester-metadata';
@@ -84,9 +77,8 @@ Consumers must fail closed when any of the following occurs:
 - any required field missing or empty
 - `provisioned_at` not in canonical ISO form
 - `provisioned_by_workflow` not in stable identifier form
-- repository variable present but not equal to `requester_login`
 
 ## Intended later usage
 
-- **Provisioning code** should create both mirrored artifacts from one helper call.
-- **Requester-review enforcement** should read `.github/provisioning/requester-metadata.json` from the provisioned repository and optionally compare against `REQUESTER_LOGIN` when that variable is available through the API.
+- **Provisioning code** should create `.github/provisioning/requester-metadata.json` during sandbox create.
+- **Requester-review enforcement** should read `.github/provisioning/requester-metadata.json` from the provisioned repository as canonical input.

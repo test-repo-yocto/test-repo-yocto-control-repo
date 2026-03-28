@@ -2,7 +2,6 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import {
-  REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME,
   REQUESTER_METADATA_FILE_PATH,
 } from '../contracts/template-metadata.js';
 import { GitHubApiError, type GitHubApiClient } from '../github/client.js';
@@ -111,8 +110,6 @@ export interface RequesterReviewEnforcementTargetReadiness {
     workflowFilePresentInTargetRepository: boolean;
     metadataFilePath: string;
     metadataFilePresentInTargetRepository: boolean;
-    repositoryVariableName: string;
-    requesterVariablePresentInTargetRepository: boolean;
     evaluatorAvailable: boolean;
   };
 }
@@ -349,41 +346,34 @@ export function getRequesterReviewEnforcementReadiness(options?: {
 }
 
 export async function getRequesterReviewEnforcementReadinessForRepository(input: {
-  client: Pick<GitHubApiClient, 'getRepositoryContent' | 'getRepositoryVariable'>;
+  client: Pick<GitHubApiClient, 'getRepositoryContent'>;
   owner: string;
   repo: string;
   ref?: string;
   workflowPath?: string;
   metadataFilePath?: string;
-  repositoryVariableName?: string;
 }): Promise<RequesterReviewEnforcementTargetReadiness> {
   const workflowPath = input.workflowPath ?? REQUESTER_REVIEW_POLICY_WORKFLOW_PATH;
   const metadataFilePath = input.metadataFilePath ?? REQUESTER_METADATA_FILE_PATH;
-  const repositoryVariableName =
-    input.repositoryVariableName ?? REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME;
   const ref = input.ref?.trim() || 'main';
   const owner = input.owner.trim();
   const repo = input.repo.trim();
   const evaluatorAvailable = typeof evaluateRequesterReviewPolicy === 'function';
 
-  const [workflowFilePresentInTargetRepository, metadataFilePresentInTargetRepository, requesterVariablePresentInTargetRepository] =
+  const [workflowFilePresentInTargetRepository, metadataFilePresentInTargetRepository] =
     await Promise.all([
       repositoryFileExists(input.client, owner, repo, workflowPath, ref),
       repositoryFileExists(input.client, owner, repo, metadataFilePath, ref),
-      repositoryVariableExists(input.client, owner, repo, repositoryVariableName),
     ]);
   const ready =
     workflowFilePresentInTargetRepository &&
     metadataFilePresentInTargetRepository &&
-    requesterVariablePresentInTargetRepository &&
     evaluatorAvailable;
   const missingArtifacts = [
     ...(!workflowFilePresentInTargetRepository
       ? [`workflow ${workflowPath} missing in target repository`] : []),
     ...(!metadataFilePresentInTargetRepository
       ? [`metadata file ${metadataFilePath} missing in target repository`] : []),
-    ...(!requesterVariablePresentInTargetRepository
-      ? [`repository variable ${repositoryVariableName} missing in target repository`] : []),
     ...(!evaluatorAvailable ? ['requester-review evaluator unavailable in control repository runtime'] : []),
   ];
 
@@ -400,8 +390,6 @@ export async function getRequesterReviewEnforcementReadinessForRepository(input:
       workflowFilePresentInTargetRepository,
       metadataFilePath,
       metadataFilePresentInTargetRepository,
-      repositoryVariableName,
-      requesterVariablePresentInTargetRepository,
       evaluatorAvailable,
     },
   };
@@ -416,24 +404,6 @@ async function repositoryFileExists(
 ): Promise<boolean> {
   try {
     await client.getRepositoryContent(owner, repo, path, ref);
-    return true;
-  } catch (error) {
-    if (error instanceof GitHubApiError && error.context.status === 404) {
-      return false;
-    }
-
-    throw error;
-  }
-}
-
-async function repositoryVariableExists(
-  client: Pick<GitHubApiClient, 'getRepositoryVariable'>,
-  owner: string,
-  repo: string,
-  variableName: string,
-): Promise<boolean> {
-  try {
-    await client.getRepositoryVariable(owner, repo, variableName);
     return true;
   } catch (error) {
     if (error instanceof GitHubApiError && error.context.status === 404) {

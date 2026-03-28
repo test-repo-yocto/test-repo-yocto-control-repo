@@ -13,7 +13,7 @@ This repository uses a **GitHub App installation token** as the only runtime aut
 | Future operation | Required permission(s) | Why this boundary requires it now |
 | --- | --- | --- |
 | Organization repository creation | `administration:write`, `metadata:read` | Needed to create new private repositories and inspect target repository metadata consistently. |
-| Repository variable writes / metadata | `actions:write`, `metadata:read` | Needed for later requester metadata persistence through repository Actions variables. |
+| Repository content writes / metadata | `contents:write`, `metadata:read` | Needed for requester metadata file persistence (`.github/provisioning/requester-metadata.json`) in newly provisioned repositories. |
 | Classic branch protection updates | `administration:write`, `contents:read`, `metadata:read` | Needed to apply and verify classic protection against `main` after repo creation. |
 | Pull request review inspection | `pull_requests:read`, `metadata:read` | Needed for later requester-review policy evaluation. |
 | Commit status inspection | `statuses:read`, `metadata:read` | Needed for later required-check and merge-readiness reads. |
@@ -29,7 +29,7 @@ This repository uses a **GitHub App installation token** as the only runtime aut
 ## Client surface prepared for later tasks
 
 - `createOrganizationRepository(...)`
-- `upsertRepositoryVariable(...)`
+- `upsertRepositoryFile(...)`
 - `updateBranchProtection(...)`
 - `getBranchProtection(...)`
 - `listPullRequestReviews(...)`

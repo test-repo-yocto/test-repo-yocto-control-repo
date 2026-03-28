@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_TEMPLATE_SOURCE_REF,
   PROVISIONING_TEMPLATE_REPOSITORY_CONFIG_KEY,
-  REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME,
   REQUESTER_METADATA_FILE_PATH,
   createRequesterMetadataArtifacts,
   normalizeApprovedTemplateSource,
@@ -31,17 +30,13 @@ describe('normalizeApprovedTemplateSource', () => {
 });
 
 describe('requester metadata contract', () => {
-  it('creates mirrored repository-variable and tracked metadata artifacts', () => {
+  it('creates tracked requester metadata file artifacts', () => {
     const result = createRequesterMetadataArtifacts({
       requesterLogin: 'Alice',
       provisionedAt: '2026-03-28T12:00:00.000Z',
       provisionedByWorkflow: '.github/workflows/provision.yml@refs/heads/main',
     });
 
-    expect(result.repositoryVariable).toEqual({
-      name: REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME,
-      value: 'alice',
-    });
     expect(result.metadataFilePath).toBe(REQUESTER_METADATA_FILE_PATH);
     expect(result.metadataFile).toEqual({
       kind: 'test-repo-yocto/requester-metadata',
@@ -54,7 +49,7 @@ describe('requester metadata contract', () => {
     expect(result.parsed.requesterLogin).toBe('alice');
   });
 
-  it('parses metadata deterministically when the mirrored variable matches', () => {
+  it('parses metadata deterministically from the tracked metadata file only', () => {
     const artifacts = createRequesterMetadataArtifacts({
       requesterLogin: 'alice',
       provisionedAt: new Date('2026-03-28T12:00:00.000Z'),
@@ -64,7 +59,6 @@ describe('requester metadata contract', () => {
     expect(
       parseRequesterMetadata({
         metadataFileContent: artifacts.metadataFileContents,
-        repositoryVariableValue: artifacts.repositoryVariable.value,
       }),
     ).toEqual(artifacts.parsed);
   });
@@ -86,20 +80,19 @@ describe('requester metadata contract', () => {
     ).toThrow(message);
   });
 
-  it('fails closed when repository-variable and metadata-file requester logins diverge', () => {
-    const artifacts = createRequesterMetadataArtifacts({
-      requesterLogin: 'alice',
-      provisionedAt: '2026-03-28T12:00:00.000Z',
-      provisionedByWorkflow: '.github/workflows/provision.yml@refs/heads/main',
-    });
+  it('ignores extra non-contract input while preserving file-only canonical parsing', () => {
+    const metadataFileContent = {
+      kind: 'test-repo-yocto/requester-metadata',
+      schema_version: 1,
+      requester_login: 'alice',
+      provisioned_at: '2026-03-28T12:00:00.000Z',
+      provisioned_by_workflow: '.github/workflows/provision.yml@refs/heads/main',
+      extra_field: 'ignored',
+    };
 
-    expect(() =>
-      parseRequesterMetadata({
-        metadataFileContent: artifacts.metadataFile,
-        repositoryVariableValue: 'bob',
-      }),
-    ).toThrow(
-      `Requester metadata mismatch: repository variable ${REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME} must exactly match ${REQUESTER_METADATA_FILE_PATH}.`,
-    );
+    expect(parseRequesterMetadata({ metadataFileContent })).toMatchObject({
+      requesterLogin: 'alice',
+      metadataFilePath: REQUESTER_METADATA_FILE_PATH,
+    });
   });
 });

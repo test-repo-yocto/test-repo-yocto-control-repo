@@ -1,7 +1,6 @@
 import { appendFileSync, readFileSync } from 'node:fs';
 
 import {
-  REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME,
   REQUESTER_METADATA_FILE_PATH,
   parseRequesterMetadata,
 } from '../contracts/template-metadata.js';
@@ -53,15 +52,13 @@ async function evaluatePolicyForPullRequest(
   context: PullRequestPolicyContext,
 ): Promise<RequesterReviewPolicyEvaluation> {
   try {
-    const [metadataFileResponse, requesterVariableResponse, reviewsResponse] = await Promise.all([
+    const [metadataFileResponse, reviewsResponse] = await Promise.all([
       client.getRepositoryContent(context.owner, context.repo, REQUESTER_METADATA_FILE_PATH),
-      client.getRepositoryVariable(context.owner, context.repo, REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME),
       client.listPullRequestReviews(context.owner, context.repo, context.pullNumber),
     ]);
 
     const parsedMetadata = parseRequesterMetadata({
       metadataFileContent: decodeRepositoryFileContent(metadataFileResponse),
-      repositoryVariableValue: readRepositoryVariableValue(requesterVariableResponse),
     });
     const normalizedReviews = normalizeGitHubPullRequestReviews(reviewsResponse);
     const latestApproverLogins = [
@@ -95,8 +92,7 @@ async function evaluatePolicyForPullRequest(
     const failureCode: RequesterReviewPolicyFailureCode =
       message.includes('Requester metadata') ||
       message.includes('requester_login') ||
-      message.includes(REQUESTER_METADATA_FILE_PATH) ||
-      message.includes(REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME)
+      message.includes(REQUESTER_METADATA_FILE_PATH)
         ? 'missing_requester_metadata'
         : 'ambiguous_review_data';
 
@@ -108,18 +104,6 @@ async function evaluatePolicyForPullRequest(
       failureCode,
     });
   }
-}
-
-function readRepositoryVariableValue(response: unknown): string {
-  const value = asRecord(response).value;
-
-  if (typeof value !== 'string' || value.trim().length === 0) {
-    throw new Error(
-      `Repository variable ${REQUESTER_LOGIN_REPOSITORY_VARIABLE_NAME} is missing or unreadable for requester-review policy.`,
-    );
-  }
-
-  return value;
 }
 
 function readPolicyContext(eventPath: string): PullRequestPolicyContext {

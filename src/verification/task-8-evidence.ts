@@ -163,12 +163,10 @@ function createMockGitHubClient(): Pick<
   GitHubApiClient,
   | 'getRepository'
   | 'createRepositoryFromTemplate'
-  | 'upsertRepositoryVariable'
   | 'upsertRepositoryFile'
   | 'updateBranchProtection'
   | 'getBranchProtection'
   | 'getRepositoryContent'
-  | 'getRepositoryVariable'
 > {
   return {
     async getRepository<T = unknown>(): Promise<T> {
@@ -187,9 +185,6 @@ function createMockGitHubClient(): Pick<
     },
     async updateBranchProtection<T = unknown>(): Promise<T> {
       return { ok: true } as T;
-    },
-    async upsertRepositoryVariable<T = unknown>(): Promise<T> {
-      return { name: 'REQUESTER_LOGIN', value: 'alice' } as T;
     },
     async upsertRepositoryFile<T = unknown>(): Promise<T> {
       return { content: { path: '.github/provisioning/requester-metadata.json' } } as T;
@@ -218,9 +213,6 @@ function createMockGitHubClient(): Pick<
     },
     async getRepositoryContent<T = unknown>(): Promise<T> {
       return { type: 'file', path: '.github/workflows/requester-review-policy.yml' } as T;
-    },
-    async getRepositoryVariable<T = unknown>(): Promise<T> {
-      return { name: 'REQUESTER_LOGIN', value: 'alice' } as T;
     },
   };
 }

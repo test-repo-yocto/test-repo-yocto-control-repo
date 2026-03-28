@@ -115,9 +115,8 @@ GitHub Actions repository/org secrets cannot start with `GITHUB_`, so the suppor
 
 Requester metadata artifacts are persisted during sandbox repository creation by writing:
 
-- repository variable `REQUESTER_LOGIN`
 - tracked file `.github/provisioning/requester-metadata.json`
 
-Readiness now depends on target-repository evidence: the target repo must expose the required template artifacts (`README.md`, `LICENSE`, `.github/workflows/ci.yml`) plus requester-review workflow + requester metadata artifacts (file + variable) before `outcome=success/readiness=ready` is returned.
+Readiness now depends on target-repository evidence: the target repo must expose the required template artifacts (`README.md`, `LICENSE`, `.github/workflows/ci.yml`) plus requester-review workflow + requester metadata file before `outcome=success/readiness=ready` is returned.
 
 Task 5 intentionally extended the stage model so sandbox success now requires classic `main` branch protection application plus verification.

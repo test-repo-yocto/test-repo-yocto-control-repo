@@ -198,10 +198,6 @@ describe('requester-review enforcement readiness', () => {
     const result = await getRequesterReviewEnforcementReadinessForRepository({
       client: {
         getRepositoryContent: async <T = unknown>() => ({ type: 'file' } as T),
-        getRepositoryVariable: async <T = unknown>() => ({
-          name: 'REQUESTER_LOGIN',
-          value: 'alice',
-        } as T),
       },
       owner: 'test-repo-yocto-sandbox',
       repo: 'proj-my-service',
@@ -210,7 +206,6 @@ describe('requester-review enforcement readiness', () => {
     expect(result.ready).toBe(true);
     expect(result.details.workflowFilePresentInTargetRepository).toBe(true);
     expect(result.details.metadataFilePresentInTargetRepository).toBe(true);
-    expect(result.details.requesterVariablePresentInTargetRepository).toBe(true);
   });
 
   it('reports not ready when target repository is missing metadata artifacts', async () => {
@@ -227,13 +222,6 @@ describe('requester-review enforcement readiness', () => {
             status: 404,
           });
         },
-        getRepositoryVariable: async () => {
-          throw new GitHubApiError('Not Found', {
-            method: 'GET',
-            path: '/repos/test-repo-yocto-sandbox/proj-my-service/actions/variables/REQUESTER_LOGIN',
-            status: 404,
-          });
-        },
       },
       owner: 'test-repo-yocto-sandbox',
       repo: 'proj-my-service',
@@ -241,7 +229,6 @@ describe('requester-review enforcement readiness', () => {
 
     expect(result.ready).toBe(false);
     expect(result.summary).toContain('metadata file .github/provisioning/requester-metadata.json missing');
-    expect(result.summary).toContain('repository variable REQUESTER_LOGIN missing');
   });
 });
 

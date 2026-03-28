@@ -31,7 +31,6 @@ The evaluator normalizes pull-request reviews before policy decisions are made:
 The workflow fails closed when any required policy input is missing or ambiguous, including:
 
 - requester metadata file missing or malformed
-- `REQUESTER_LOGIN` repository variable missing or mismatched with the metadata file
 - pull-request review payloads missing required fields
 - reviewer permission data missing or unsupported
 - no qualifying approval satisfying the fixed algorithm
@@ -42,7 +41,6 @@ Provisioning readiness can report `ready` only after target-repository evidence 
 
 1. `.github/workflows/requester-review-policy.yml` exists in the provisioned target repository
 2. `.github/provisioning/requester-metadata.json` exists in the provisioned target repository
-3. repository variable `REQUESTER_LOGIN` exists in the provisioned target repository
-4. the canonical evaluator export is available in `src/policy/requester-review-policy.ts`
+3. the canonical evaluator export is available in `src/policy/requester-review-policy.ts`
 
 This keeps `enforcement_readiness_verify` fail-closed and avoids reporting `ready` from control-repo file presence alone.

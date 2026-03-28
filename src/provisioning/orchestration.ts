@@ -66,7 +66,7 @@ export interface ProvisioningWorkflowConfig {
     owner: string;
     repo: string;
     ref?: string;
-    client: Pick<GitHubApiClient, 'getRepositoryContent' | 'getRepositoryVariable'>;
+    client: Pick<GitHubApiClient, 'getRepositoryContent'>;
   }) =>
     | Promise<{
         ready: boolean;
@@ -86,12 +86,10 @@ export interface ProvisioningWorkflowDependencies {
     GitHubApiClient,
     | 'getRepository'
     | 'createRepositoryFromTemplate'
-    | 'upsertRepositoryVariable'
     | 'upsertRepositoryFile'
     | 'updateBranchProtection'
     | 'getBranchProtection'
     | 'getRepositoryContent'
-    | 'getRepositoryVariable'
   >;
   config: ProvisioningWorkflowConfig;
 }
@@ -442,12 +440,6 @@ export async function runProvisioningWorkflow(
     createdRepositoryState = repository;
 
     try {
-      await dependencies.client.upsertRepositoryVariable({
-        owner: repository.owner,
-        repo: repository.name,
-        name: metadataArtifacts.repositoryVariable.name,
-        value: metadataArtifacts.repositoryVariable.value,
-      });
       await dependencies.client.upsertRepositoryFile({
         owner: repository.owner,
         repo: repository.name,
@@ -792,8 +784,7 @@ function resolveTargetOwner(executionMode: ExecutionMode, sandboxOwner?: string)
 }
 
 function summarizeRequesterMetadata(metadataArtifacts: ReturnType<typeof createRequesterMetadataArtifacts>) {
-  return {
-    repositoryVariable: metadataArtifacts.repositoryVariable,
+      return {
     metadataFilePath: metadataArtifacts.metadataFilePath,
     metadataKind: metadataArtifacts.metadataFile.kind,
     requesterLogin: metadataArtifacts.parsed.requesterLogin,
@@ -966,10 +957,10 @@ async function resolveEnforcementReadiness(
 function remediationForMetadataPersistenceFailure(): ProvisioningRemediation {
   return {
     code: 'metadata_persistence_failed',
-    summary: 'Repository was created but requester metadata artifacts could not be persisted.',
+    summary: 'Repository was created but requester metadata file could not be persisted.',
     actions: [
-      'Treat the repository as quarantined until requester metadata artifacts are repaired.',
-      'Write REQUESTER_LOGIN repository variable and .github/provisioning/requester-metadata.json in the target repository.',
+      'Treat the repository as quarantined until requester metadata file is repaired.',
+      'Write .github/provisioning/requester-metadata.json in the target repository with canonical requester metadata content.',
       'Re-run provisioning verification after metadata persistence succeeds.',
     ],
   };
