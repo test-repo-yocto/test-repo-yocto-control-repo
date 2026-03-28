@@ -66,6 +66,9 @@ gh secret set PROVISIONING_GITHUB_APP_PRIVATE_KEY
 
 - App 관련 3개 값은 GitHub Actions에서는 `PROVISIONING_GITHUB_APP_*` secret으로 넣어야 합니다.
 - 기존 `GITHUB_APP_*` 이름은 GitHub Actions secret 이름으로는 invalid이므로 repo/org secret 설정 계약으로 사용하면 안 됩니다.
+- GitHub App 설치 범위는 가능하면 `test-repo-yocto` 조직의 **All repositories**로 설정하는 편이 안전합니다. 최소한 워크플로가 새로 만드는 대상 저장소도 설치 범위에 반드시 포함되어야 합니다.
+- 실제 `workflow_dispatch` 실행에서는 App 인증과 저장소 생성까지는 성공했지만, 새 저장소에 requester metadata를 기록하는 `/actions/variables` 단계에서 `Resource not accessible by integration` 오류로 실패할 수 있었습니다. 쉽게 말해 App이 방금 만든 저장소 Actions 변수에 접근하지 못한 상황입니다.
+- 이런 증상이 보이면 `test-repo-yocto`에서 App을 전체 저장소 대상으로 다시 설치하거나, 최소한 새로 프로비저닝되는 대상 저장소가 설치 범위에 자동으로 포함되도록 확인해야 합니다.
 - 템플릿 저장소와 sandbox owner는 보통 variable로 관리하면 운영자가 바꾸기 쉽습니다.
 - repo 수준 또는 org 수준 중 하나에만 정확히 설정되어도 되지만, 워크플로가 실제로 상속받는 위치에 존재해야 합니다.
 
