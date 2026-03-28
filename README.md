@@ -2,6 +2,72 @@
 
 Greenfield control repository scaffold for future automation that provisions hardened private repositories in `test-repo-yocto`.
 
+## Get Started
+
+이 저장소는 `test-repo-yocto` 조직 안에서 강화된 private `proj-*` 저장소를 프로비저닝하기 위한 TypeScript 기반 control repository입니다. 실제 애플리케이션 코드를 배포하는 저장소가 아니라, 프로비저닝 계약, GitHub 경계 코드, 검증 로직, 증적 생성 흐름을 관리하는 운영용 저장소로 보면 됩니다.
+
+### 준비 사항
+
+- Node.js 20 이상
+- npm
+- 로컬에서 테스트와 타입 검사를 실행할 수 있는 개발 환경
+
+### 설치 및 기본 확인
+
+처음 시작할 때는 아래 순서로 확인하면 됩니다.
+
+```bash
+npm install
+npm test
+npm run check
+```
+
+- `npm install`: 의존성을 설치합니다.
+- `npm test`: 전체 테스트를 실행해서 현재 구현이 깨지지 않았는지 확인합니다.
+- `npm run check`: TypeScript 타입 검사만 수행합니다.
+
+### 실무에서 어떻게 보나
+
+운영자는 이 저장소에서 아래 내용을 확인합니다.
+
+- 프로비저닝 입력 계약, 예를 들어 `repo_slug`, `description`, `execution_mode`
+- `proj-${repo_slug}` 이름 규칙과 slug 검증 정책
+- GitHub App 권한 경계와 중앙화된 클라이언트 래퍼
+- 브랜치 보호, requester review 정책, 부분 실패 모델링 결과
+
+즉, 새 저장소 생성 자동화를 바꾸거나 검증할 때 먼저 이 저장소의 계약과 테스트, 증적을 봐야 합니다.
+
+### 자주 쓰는 명령어
+
+```bash
+npm install
+npm test
+npm run check
+npm run evidence:task8
+```
+
+- `npm install`: 로컬 작업을 위한 패키지를 설치합니다.
+- `npm test`: 전체 테스트 스위트를 실행합니다.
+- `npm run check`: 타입 오류가 없는지 확인합니다.
+- `npm run evidence:task8`: Task 8 관련 로컬 증적 파일을 다시 생성합니다.
+
+Task 8 관련 테스트만 빠르게 보고 싶으면 `npm run test:task8`도 사용할 수 있습니다.
+
+### 어디를 보면 되는가
+
+- `docs/provisioning-contract.md`: 프로비저닝 입력 계약과 정규화 규칙
+- `docs/github-app-permissions.md`: GitHub App 권한과 인증 경계
+- `docs/requester-metadata-contract.md`: 요청자 메타데이터 계약
+- `docs/provisioning-workflow.md`: 단계별 워크플로와 dry-run, sandbox 의미
+- `docs/classic-branch-protection.md`: `main` 브랜치 보호 기준
+- `docs/requester-review-policy.md`: requester-review 정책 판정 규칙
+- `docs/task-8-evidence.md`: Task 8 증적 생성 방식과 해석 방법
+- `.sisyphus/evidence/`: 기계 판독용 증적 산출물 위치
+
+### 현재 한계
+
+`npm run evidence:task8`로 만드는 Task 8 증적은 로컬 mocked sandbox 시뮬레이션입니다. 저장소 코드 경로와 산출물은 검증하지만, 실제 GitHub sandbox 또는 조직에서 실행된 required-check context의 최종 표시값까지 증명하지는 않습니다. 그 live GitHub required-check context proof는 별도의 실제 실행으로 확인해야 합니다.
+
 ## Current scope
 
 This repository currently establishes:
