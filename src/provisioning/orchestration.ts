@@ -17,6 +17,7 @@ import {
   applyClassicMainBranchProtection,
   createClassicMainBranchProtection,
 } from '../github/branch-protection.js';
+import { GitHubAppPermissionError } from '../github/auth.js';
 import { GitHubApiError, type GitHubApiClient } from '../github/client.js';
 
 export const PROVISIONING_STAGE_NAMES = [
@@ -714,7 +715,11 @@ export async function runProvisioningWorkflow(
 
     if (isBranchProtectionPlanLimit && createdRepositoryState) {
       const remediation = remediationForHardeningManualRequired();
-      const githubError = error as GitHubApiError;
+      const platformLimitation = getBranchProtectionPlanLimitEvidence(error, {
+        owner: createdRepositoryState.owner,
+        repo: createdRepositoryState.name,
+        branch: 'main',
+      });
 
       stages.push({
         stage: 'branch_protection_apply',
@@ -725,11 +730,7 @@ export async function runProvisioningWorkflow(
           owner: createdRepositoryState.owner,
           repository: createdRepositoryState.name,
           branch: 'main',
-          platformLimitation: {
-            status: githubError.context.status,
-            path: githubError.context.path,
-            message: githubError.message,
-          },
+          ...(platformLimitation ? { platformLimitation } : {}),
           remediation,
         },
       });
@@ -882,20 +883,83 @@ function isGitHubPrivateBranchProtectionPlanLimitError(
     branch: string;
   },
 ): boolean {
-  if (!(error instanceof GitHubApiError)) {
-    return false;
-  }
+  const evidence = getBranchProtectionPlanLimitEvidence(error, input);
+  return evidence !== undefined;
+}
 
-  if (error.context.status !== 403) {
-    return false;
-  }
-
+function getBranchProtectionPlanLimitEvidence(
+  error: unknown,
+  input: {
+    owner: string;
+    repo: string;
+    branch: string;
+  },
+):
+  | {
+      errorType: 'GitHubApiError' | 'GitHubAppPermissionError';
+      method: 'PUT';
+      path: string;
+      message: string;
+      status?: number;
+    }
+  | undefined {
+  const expectedMethod = 'PUT';
   const expectedPath = `/repos/${input.owner}/${input.repo}/branches/${input.branch}/protection`;
-  if (error.context.path !== expectedPath) {
-    return false;
+  const planLimitMessage = /upgrade to github pro or make this repository public to enable this feature\.?/i;
+
+  if (error instanceof GitHubApiError) {
+    if (error.context.status !== 403) {
+      return undefined;
+    }
+
+    if (error.context.path !== expectedPath) {
+      return undefined;
+    }
+
+    if (!planLimitMessage.test(error.message)) {
+      return undefined;
+    }
+
+    return {
+      errorType: 'GitHubApiError',
+      method: expectedMethod,
+      path: error.context.path,
+      message: error.message,
+      status: error.context.status,
+    };
   }
 
-  return /upgrade to github pro or make this repository public to enable this feature\.?/i.test(error.message);
+  if (error instanceof GitHubAppPermissionError) {
+    const match = /^GitHub API permission failure for (?<method>\S+) (?<path>\/\S+): (?<message>.+)$/i.exec(error.message);
+    if (!match?.groups) {
+      return undefined;
+    }
+
+    const method = match.groups.method?.toUpperCase();
+    const path = match.groups.path;
+    const message = match.groups.message?.trim();
+
+    if (method !== expectedMethod) {
+      return undefined;
+    }
+
+    if (path !== expectedPath) {
+      return undefined;
+    }
+
+    if (!message || !planLimitMessage.test(message)) {
+      return undefined;
+    }
+
+    return {
+      errorType: 'GitHubAppPermissionError',
+      method: expectedMethod,
+      path,
+      message,
+    };
+  }
+
+  return undefined;
 }
 
 async function repositoryFileExists(

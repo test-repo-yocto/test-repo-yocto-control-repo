@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { REQUIRED_TEMPLATE_ARTIFACTS } from '../src/contracts/template-metadata.js';
 import { REQUESTER_REVIEW_POLICY_CHECK } from '../src/github/branch-protection.js';
+import { GitHubAppPermissionError } from '../src/github/auth.js';
 import { GitHubApiError } from '../src/github/client.js';
 import {
   formatProvisioningStageLogs,
@@ -407,11 +408,10 @@ describe('runProvisioningWorkflow', () => {
   it('returns manual follow-up non-ready result when GitHub Free/private plan blocks branch protection API', async () => {
     const dependencies = createDependencies();
     dependencies.mocks.updateBranchProtection.mockRejectedValueOnce(
-      new GitHubApiError('Upgrade to GitHub Pro or make this repository public to enable this feature.', {
-        method: 'PUT',
-        path: '/repos/test-repo-yocto-sandbox/proj-my-service/branches/main/protection',
-        status: 403,
-      }),
+      new GitHubAppPermissionError(
+        'GitHub API permission failure for PUT /repos/test-repo-yocto-sandbox/proj-my-service/branches/main/protection: Upgrade to GitHub Pro or make this repository public to enable this feature.',
+        [],
+      ),
     );
 
     const result = await runProvisioningWorkflow(
@@ -457,12 +457,36 @@ describe('runProvisioningWorkflow', () => {
       summary: expect.stringContaining('plan limits blocked'),
       details: expect.objectContaining({
         platformLimitation: {
-          status: 403,
+          errorType: 'GitHubAppPermissionError',
+          method: 'PUT',
           path: '/repos/test-repo-yocto-sandbox/proj-my-service/branches/main/protection',
           message: 'Upgrade to GitHub Pro or make this repository public to enable this feature.',
         },
       }),
     });
+  });
+
+  it('keeps fail-closed hardening_apply_failed for other permission failures', async () => {
+    const dependencies = createDependencies();
+    dependencies.mocks.updateBranchProtection.mockRejectedValueOnce(
+      new GitHubAppPermissionError(
+        'GitHub API permission failure for PUT /repos/test-repo-yocto-sandbox/proj-my-service/branches/main/protection: Resource not accessible by integration',
+        [],
+      ),
+    );
+
+    const result = await runProvisioningWorkflow(
+      {
+        repo_slug: 'my-service',
+        description: 'sandbox repo',
+        execution_mode: 'sandbox',
+      },
+      dependencies,
+    );
+
+    expect(result.outcome).toBe('quarantined');
+    expect(result.failureClass).toBe('hardening_apply_failed');
+    expect(result.quarantine?.required).toBe(true);
   });
 
   it('returns non-ready with explicit remediation when required template artifacts are missing', async () => {
