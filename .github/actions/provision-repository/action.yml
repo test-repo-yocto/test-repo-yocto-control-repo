@@ -1,0 +1,30 @@
+name: provision-repository
+description: Local JavaScript action that runs the repository provisioning orchestration.
+
+inputs:
+  repo_slug:
+    description: Lowercase project slug; final repo name becomes proj-<repo_slug>
+    required: true
+  description:
+    description: Repository description applied during provisioning
+    required: true
+  execution_mode:
+    description: Internal operator/testing mode
+    required: false
+    default: dry-run
+
+outputs:
+  result:
+    description: JSON-serialized provisioning result
+  ok:
+    description: Whether provisioning finished fully ready
+  outcome:
+    description: Final provisioning outcome
+  readiness:
+    description: Final provisioning readiness state
+  scope_success:
+    description: Whether create plus hardening scope completed successfully
+
+runs:
+  using: node24
+  main: dist/index.js

@@ -26,19 +26,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-node@v4
+      - name: Run provisioning action
+        id: provision
+        uses: ./.github/actions/provision-repository
         with:
-          node-version: 22
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run provisioning orchestration
+          repo_slug: ${{ inputs.repo_slug }}
+          description: ${{ inputs.description }}
+          execution_mode: ${{ inputs.execution_mode }}
         env:
-          INPUT_REPO_SLUG: ${{ inputs.repo_slug }}
-          INPUT_DESCRIPTION: ${{ inputs.description }}
-          INPUT_EXECUTION_MODE: ${{ inputs.execution_mode }}
           PROVISIONING_GITHUB_APP_ID: ${{ secrets.PROVISIONING_GITHUB_APP_ID }}
           PROVISIONING_GITHUB_APP_INSTALLATION_ID: ${{ secrets.PROVISIONING_GITHUB_APP_INSTALLATION_ID }}
           PROVISIONING_GITHUB_APP_PRIVATE_KEY: ${{ secrets.PROVISIONING_GITHUB_APP_PRIVATE_KEY }}
@@ -46,4 +41,3 @@ jobs:
           PROVISIONING_TEMPLATE_REPOSITORY_REF: ${{ vars.PROVISIONING_TEMPLATE_REPOSITORY_REF }}
           PROVISIONING_SANDBOX_OWNER: ${{ vars.PROVISIONING_SANDBOX_OWNER }}
           GITHUB_WORKFLOW_REF: .github/workflows/provision-repository.yml@${{ github.ref }}
-        run: npx tsx src/provisioning/run-workflow.ts

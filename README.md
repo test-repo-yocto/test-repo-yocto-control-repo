@@ -6,6 +6,8 @@ Greenfield control repository scaffold for future automation that provisions har
 
 이 저장소는 `test-repo-yocto` 조직 안에서 강화된 private `proj-*` 저장소를 프로비저닝하기 위한 TypeScript 기반 control repository입니다. 실제 애플리케이션 코드를 배포하는 저장소가 아니라, 프로비저닝 계약, GitHub 경계 코드, 검증 로직, 증적 생성 흐름을 관리하는 운영용 저장소로 보면 됩니다.
 
+다만 operator가 실제로 접하는 실행 표면은 최대한 단순하게 유지했습니다. `provision-repository` workflow는 이제 `npm ci`와 `tsx`를 직접 호출하지 않고, 로컬 JavaScript action(`.github/actions/provision-repository`) 하나만 실행합니다. 복잡한 정책 로직은 TypeScript로 유지해 테스트 가능하게 두고, workflow 표면만 `workflow -> local action` 구조로 단순화한 것입니다.
+
 ### 준비 사항
 
 - Node.js 20 이상
@@ -79,6 +81,26 @@ npm test
 npm run check
 ```
 
+### Workflow가 왜 local action을 쓰는가
+
+이 저장소는 단순한 YAML 예제가 아니라 아래 같은 실제 정책 로직을 포함합니다.
+
+- `repo_slug` 계약과 최종 이름 규칙
+- duplicate preflight
+- requester metadata persistence
+- template artifact 검증
+- requester-review policy 계산
+- readiness / quarantine / remediation 결과 모델
+- GitHub platform edge case 대응
+
+이 로직을 모두 workflow YAML/bash에 옮기면 유지보수와 테스트가 더 어려워집니다. 그래서 현재 구조는 아래처럼 나뉩니다.
+
+1. workflow: 입력/secret/variable 연결
+2. local JavaScript action: 실행 경계 하나
+3. TypeScript 모듈: 정책과 검증 로직
+
+즉, 사용자는 action 하나를 실행하면 되고, 여러 TypeScript 파일은 유지보수와 테스트를 위한 내부 구현입니다.
+
 ### 실무에서 어떻게 보나
 
 운영자는 이 저장소에서 아래 내용을 확인합니다.
@@ -96,12 +118,14 @@ npm run check
 npm install
 npm test
 npm run check
+npm run build:provision-action
 npm run evidence:task8
 ```
 
 - `npm install`: 로컬 작업을 위한 패키지를 설치합니다.
 - `npm test`: 전체 테스트 스위트를 실행합니다.
 - `npm run check`: 타입 오류가 없는지 확인합니다.
+- `npm run build:provision-action`: local provisioning action 번들을 다시 생성합니다.
 - `npm run evidence:task8`: Task 8 관련 로컬 증적 파일을 다시 생성합니다.
 
 Task 8 관련 테스트만 빠르게 보고 싶으면 `npm run test:task8`도 사용할 수 있습니다.

@@ -61,7 +61,7 @@ The workflow only returns `ok=true` when `outcome=success` and `readiness=ready`
 - performs the same validation and duplicate preflight as dry-run
 - creates the target repo via GitHub's template-generation path
 - always requests `private: true`
-- applies classic branch protection to `main`
+- applies classic branch protection to `main` when the target platform supports it
 - verifies the live branch protection state after application
 - verifies that the target repository actually contains the required template-delivered artifacts: `README.md`, `LICENSE`, and `.github/workflows/ci.yml`
 - fails immediately if the target repo already exists
@@ -93,10 +93,14 @@ The workflow only returns `ok=true` when `outcome=success` and `readiness=ready`
 
 ## Workflow entrypoint
 
-`.github/workflows/provision-repository.yml` installs dependencies and runs:
+`.github/workflows/provision-repository.yml` checks out the repository and then calls the local JavaScript action at `.github/actions/provision-repository`.
+
+That action runs the bundled runtime generated from `src/provisioning/run-workflow.ts`, so the operator-facing runtime surface is `workflow -> local action`, not `workflow -> npm ci -> tsx -> internal module graph`.
+
+To refresh the checked-in provisioning action bundle after code changes:
 
 ```bash
-npx tsx src/provisioning/run-workflow.ts
+npm run build:provision-action
 ```
 
 Required runtime inputs/config:
