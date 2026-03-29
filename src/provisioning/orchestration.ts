@@ -12,7 +12,11 @@ import {
   createRequesterMetadataArtifacts,
   normalizeApprovedTemplateSource,
 } from '../contracts/template-metadata.js';
-import { applyClassicMainBranchProtection, createClassicMainBranchProtection } from '../github/branch-protection.js';
+import {
+  REQUESTER_REVIEW_POLICY_CHECK,
+  applyClassicMainBranchProtection,
+  createClassicMainBranchProtection,
+} from '../github/branch-protection.js';
 import { GitHubApiError, type GitHubApiClient } from '../github/client.js';
 
 export const PROVISIONING_STAGE_NAMES = [
@@ -38,6 +42,7 @@ export type ProvisioningFailureClass =
   | 'duplicate_preflight_failed'
   | 'create_failed'
   | 'metadata_persistence_failed'
+  | 'hardening_manual_required'
   | 'hardening_apply_failed'
   | 'hardening_verification_failed'
   | 'template_artifacts_missing'
@@ -697,6 +702,64 @@ export async function runProvisioningWorkflow(
     });
   } catch (error) {
     const failedStage = createdRepositoryStageFailed(stages) ? 'branch_protection_apply' : 'create_or_plan';
+    const failedRepositoryOwner = createdRepositoryState?.owner ?? targetOwner;
+    const failedRepositoryName = createdRepositoryState?.name ?? normalizedRequest.targetRepositoryName;
+    const isBranchProtectionPlanLimit =
+      failedStage === 'branch_protection_apply' &&
+      isGitHubPrivateBranchProtectionPlanLimitError(error, {
+        owner: failedRepositoryOwner,
+        repo: failedRepositoryName,
+        branch: 'main',
+      });
+
+    if (isBranchProtectionPlanLimit && createdRepositoryState) {
+      const remediation = remediationForHardeningManualRequired();
+      const githubError = error as GitHubApiError;
+
+      stages.push({
+        stage: 'branch_protection_apply',
+        status: 'failure',
+        summary:
+          'Repository creation and requester metadata persistence succeeded, but GitHub plan limits blocked private-repository branch protection. Manual hardening follow-up is required.',
+        details: {
+          owner: createdRepositoryState.owner,
+          repository: createdRepositoryState.name,
+          branch: 'main',
+          platformLimitation: {
+            status: githubError.context.status,
+            path: githubError.context.path,
+            message: githubError.message,
+          },
+          remediation,
+        },
+      });
+      stages.push(
+        skipStage(
+          'branch_protection_verify',
+          'Skipped because GitHub plan limits blocked automatic branch protection for this private repository.',
+        ),
+      );
+      stages.push(skipStage('template_artifact_verify', 'Skipped until manual hardening follow-up is completed.'));
+      stages.push(skipStage('enforcement_readiness_verify', 'Skipped until manual hardening follow-up is completed.'));
+
+      return buildResult({
+        executionMode,
+        outcome: 'not_ready',
+        targetOwner,
+        targetRepositoryName: normalizedRequest.targetRepositoryName,
+        repository: createdRepositoryState,
+        failureClass: 'hardening_manual_required',
+        remediation,
+        scope: {
+          repositoryCreated: true,
+          hardeningApplied: false,
+          hardeningVerified: false,
+          templateArtifactsVerified: false,
+          enforcementReady: false,
+        },
+        stages,
+      });
+    }
 
     stages.push({
       stage: failedStage,
@@ -809,6 +872,30 @@ function isExecutionMode(value: string): value is ExecutionMode {
 
 function createdRepositoryStageFailed(stages: ProvisioningStageOutput[]): boolean {
   return stages.some((stage) => stage.stage === 'create_or_plan' && stage.status === 'success');
+}
+
+function isGitHubPrivateBranchProtectionPlanLimitError(
+  error: unknown,
+  input: {
+    owner: string;
+    repo: string;
+    branch: string;
+  },
+): boolean {
+  if (!(error instanceof GitHubApiError)) {
+    return false;
+  }
+
+  if (error.context.status !== 403) {
+    return false;
+  }
+
+  const expectedPath = `/repos/${input.owner}/${input.repo}/branches/${input.branch}/protection`;
+  if (error.context.path !== expectedPath) {
+    return false;
+  }
+
+  return /upgrade to github pro or make this repository public to enable this feature\.?/i.test(error.message);
 }
 
 async function repositoryFileExists(
@@ -1042,6 +1129,19 @@ function remediationForHardeningApplyFailure(): ProvisioningRemediation {
       'Treat the repository as quarantined and block normal use until hardening is repaired.',
       'Re-apply classic main branch protection and verify required checks/admin enforcement.',
       'Re-run provisioning verification after hardening is restored.',
+    ],
+  };
+}
+
+function remediationForHardeningManualRequired(): ProvisioningRemediation {
+  return {
+    code: 'hardening_manual_required',
+    summary:
+      'Repository was created and requester metadata was persisted, but GitHub Free/private-repository plan limits blocked automatic branch protection.',
+    actions: [
+      'Manually configure main branch protection for the new private repository before allowing normal development use.',
+      `Apply the same canonical controls (required status check \"${REQUESTER_REVIEW_POLICY_CHECK}\", required approving review count >= 1, enforce admins, no direct push bypass) once available.`,
+      'To automate this step in future runs, either upgrade the organization plan to support private-repo branch protection APIs or use a public repository where this API is available.',
     ],
   };
 }

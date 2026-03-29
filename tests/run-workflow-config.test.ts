@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 
 import {
   formatMissingGitHubActionsConfigurationError,
+  isManualHardeningFollowupResult,
   loadProvisioningRuntimeConfig,
+  shouldFailProvisioningRun,
 } from '../src/provisioning/run-workflow.js';
+import type { ProvisioningWorkflowResult } from '../src/provisioning/orchestration.js';
 
 describe('loadProvisioningRuntimeConfig', () => {
   it('loads required GitHub Actions secrets and variables when present', () => {
@@ -85,5 +88,61 @@ describe('formatMissingGitHubActionsConfigurationError', () => {
     expect(message).toContain('Repository Settings → Secrets and variables → Actions');
     expect(message).toContain('cannot start with GITHUB_');
     expect(message).toContain('Legacy local/manual fallback env names remain supported');
+  });
+});
+
+describe('shouldFailProvisioningRun', () => {
+  function createResult(overrides?: Partial<ProvisioningWorkflowResult>): ProvisioningWorkflowResult {
+    return {
+      ok: false,
+      outcome: 'failed',
+      readiness: 'not_ready',
+      scopeSuccess: false,
+      executionMode: 'sandbox',
+      failureClass: 'create_failed',
+      scope: {
+        repositoryCreated: false,
+        hardeningApplied: false,
+        hardeningVerified: false,
+        templateArtifactsVerified: false,
+        enforcementReady: false,
+      },
+      stages: [],
+      ...overrides,
+    };
+  }
+
+  it('does not fail workflow process exit for manual hardening follow-up result', () => {
+    const result = createResult({
+      outcome: 'not_ready',
+      failureClass: 'hardening_manual_required',
+      scope: {
+        repositoryCreated: true,
+        hardeningApplied: false,
+        hardeningVerified: false,
+        templateArtifactsVerified: false,
+        enforcementReady: false,
+      },
+    });
+
+    expect(isManualHardeningFollowupResult(result)).toBe(true);
+    expect(shouldFailProvisioningRun(result)).toBe(false);
+  });
+
+  it('still fails workflow process exit for non-manual hardening provisioning failures', () => {
+    const result = createResult({
+      outcome: 'quarantined',
+      failureClass: 'hardening_apply_failed',
+      scope: {
+        repositoryCreated: true,
+        hardeningApplied: false,
+        hardeningVerified: false,
+        templateArtifactsVerified: false,
+        enforcementReady: false,
+      },
+    });
+
+    expect(isManualHardeningFollowupResult(result)).toBe(false);
+    expect(shouldFailProvisioningRun(result)).toBe(true);
   });
 });

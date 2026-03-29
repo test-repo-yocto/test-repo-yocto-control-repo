@@ -10,7 +10,11 @@ import {
   getConfiguredGitHubActionsSecretNames,
   loadGitHubAppRuntimeCredentials,
 } from './github-actions-config.js';
-import { formatProvisioningStageLogs, runProvisioningWorkflow } from './orchestration.js';
+import {
+  formatProvisioningStageLogs,
+  runProvisioningWorkflow,
+  type ProvisioningWorkflowResult,
+} from './orchestration.js';
 
 const REQUIRED_GITHUB_ACTIONS_VARIABLES = ['PROVISIONING_TEMPLATE_REPOSITORY'] as const;
 
@@ -68,9 +72,31 @@ async function main(): Promise<void> {
   writeGitHubOutput('readiness', result.readiness);
   writeGitHubOutput('scope_success', String(result.scopeSuccess));
 
-  if (!result.ok) {
+  if (shouldFailProvisioningRun(result)) {
     process.exitCode = 1;
   }
+}
+
+export function shouldFailProvisioningRun(result: ProvisioningWorkflowResult): boolean {
+  if (result.ok) {
+    return false;
+  }
+
+  if (isManualHardeningFollowupResult(result)) {
+    return false;
+  }
+
+  return true;
+}
+
+export function isManualHardeningFollowupResult(result: ProvisioningWorkflowResult): boolean {
+  return (
+    result.outcome === 'not_ready' &&
+    result.failureClass === 'hardening_manual_required' &&
+    result.scope.repositoryCreated === true &&
+    result.scope.hardeningApplied === false &&
+    result.executionMode === 'sandbox'
+  );
 }
 
 export interface ProvisioningRuntimeConfig {

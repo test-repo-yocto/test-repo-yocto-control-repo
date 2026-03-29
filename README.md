@@ -157,11 +157,17 @@ tests/                  Validation and GitHub auth/client tests
 
 The dispatch contract is centered on these operator-facing inputs:
 
-- `repo_slug` (required): lowercase slug for the requested project repository
+- `repo_slug` (required): lowercase slug for the requested project repository (**enter slug only, without `proj-` prefix**)
 - `description` (required): repository description to apply during provisioning
 - `execution_mode` (optional, internal-only): `dry-run` or `sandbox`; defaults to `dry-run`
 
 The final repository name is always derived as `proj-${repo_slug}` and never accepted directly as an input.
+
+GitHub Free/private-repository limitation handling:
+
+- Live runs can create the repository and persist requester metadata successfully but fail on branch protection API (`PUT /repos/.../branches/main/protection`) with `Upgrade to GitHub Pro or make this repository public to enable this feature.`
+- This path is reported as `outcome=not_ready` + `failureClass=hardening_manual_required` (never hidden as success/ready).
+- Workflow exit is non-failing for this exact known platform limitation so operators can continue with explicit manual hardening follow-up.
 
 ## Slug policy
 

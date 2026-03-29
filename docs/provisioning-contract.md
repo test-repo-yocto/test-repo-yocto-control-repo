@@ -4,7 +4,7 @@
 
 | Input | Required | Type | Notes |
 | --- | --- | --- | --- |
-| `repo_slug` | yes | string | Operator-facing project slug. Must satisfy the canonical slug policy. |
+| `repo_slug` | yes | string | Operator-facing project slug **without** the `proj-` prefix. Must satisfy the canonical slug policy. |
 | `description` | yes | string | Human-readable repository description. Trimmed during normalization and must not be empty. |
 | `execution_mode` | no | `dry-run \| sandbox` | Internal operator/testing mode only. Defaults to `dry-run`. |
 
@@ -13,6 +13,7 @@
 - Organization target: `test-repo-yocto`
 - Final repository name: `proj-${repo_slug}`
 - Prefix is enforced by code, not accepted from operators
+- Example: input `repo_slug=my-service` → final repository `proj-my-service`
 
 ## Canonical validation rules
 

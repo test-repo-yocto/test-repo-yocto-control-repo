@@ -404,6 +404,67 @@ describe('runProvisioningWorkflow', () => {
     ]);
   });
 
+  it('returns manual follow-up non-ready result when GitHub Free/private plan blocks branch protection API', async () => {
+    const dependencies = createDependencies();
+    dependencies.mocks.updateBranchProtection.mockRejectedValueOnce(
+      new GitHubApiError('Upgrade to GitHub Pro or make this repository public to enable this feature.', {
+        method: 'PUT',
+        path: '/repos/test-repo-yocto-sandbox/proj-my-service/branches/main/protection',
+        status: 403,
+      }),
+    );
+
+    const result = await runProvisioningWorkflow(
+      {
+        repo_slug: 'my-service',
+        description: 'sandbox repo',
+        execution_mode: 'sandbox',
+      },
+      dependencies,
+    );
+
+    expect(result.ok).toBe(false);
+    expect(result.outcome).toBe('not_ready');
+    expect(result.readiness).toBe('not_ready');
+    expect(result.failureClass).toBe('hardening_manual_required');
+    expect(result.scopeSuccess).toBe(false);
+    expect(result.quarantine).toBeUndefined();
+    expect(result.scope).toMatchObject({
+      repositoryCreated: true,
+      hardeningApplied: false,
+      hardeningVerified: false,
+      templateArtifactsVerified: false,
+      enforcementReady: false,
+    });
+    expect(result.remediation?.actions).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('Manually configure main branch protection'),
+        expect.stringContaining('upgrade the organization plan'),
+      ]),
+    );
+    expect(result.stages.map((stage) => [stage.stage, stage.status])).toEqual([
+      ['contract_validation', 'success'],
+      ['mode_resolution', 'success'],
+      ['template_source_resolution', 'success'],
+      ['duplicate_target_preflight', 'success'],
+      ['create_or_plan', 'success'],
+      ['branch_protection_apply', 'failure'],
+      ['branch_protection_verify', 'skipped'],
+      ['template_artifact_verify', 'skipped'],
+      ['enforcement_readiness_verify', 'skipped'],
+    ]);
+    expect(result.stages.find((stage) => stage.stage === 'branch_protection_apply')).toMatchObject({
+      summary: expect.stringContaining('plan limits blocked'),
+      details: expect.objectContaining({
+        platformLimitation: {
+          status: 403,
+          path: '/repos/test-repo-yocto-sandbox/proj-my-service/branches/main/protection',
+          message: 'Upgrade to GitHub Pro or make this repository public to enable this feature.',
+        },
+      }),
+    });
+  });
+
   it('returns non-ready with explicit remediation when required template artifacts are missing', async () => {
     const dependencies = createDependencies({
       enforcementReadinessCheck: async () => ({

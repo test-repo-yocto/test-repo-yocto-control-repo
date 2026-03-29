@@ -72,6 +72,8 @@ The workflow only returns `ok=true` when `outcome=success` and `readiness=ready`
 - If repository creation succeeds but hardening application fails, the result is `outcome=quarantined` with repository details included.
 - If hardening verification detects drift after apply, the result is `outcome=quarantined` and includes drift issues plus remediation actions.
 - Quarantined results include a `quarantine` object so operators can treat the repo as visibly non-ready until remediated.
+- If repository creation + metadata persistence succeed but GitHub rejects classic private-repo branch protection on `PUT /repos/.../branches/main/protection` with the Free-plan limitation message (`Upgrade to GitHub Pro or make this repository public to enable this feature.`), the result is `outcome=not_ready`, `failureClass=hardening_manual_required`, and remediation is manual hardening follow-up (or plan/public-repo change).
+- This plan-limit path is explicit/non-ready (never reported as ready/success), but `run-workflow.ts` does not set process exit code 1 for this exact manual-follow-up outcome.
 
 ## Enforcement-not-ready semantics
 
